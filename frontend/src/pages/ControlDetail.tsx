@@ -124,7 +124,7 @@ export default function ControlDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/frameworks')}
+                onClick={() => navigate('/controls')}
                 className="text-gray-400 hover:text-white"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,12 +133,11 @@ export default function ControlDetail() {
               </button>
               <div>
                 <div className="flex items-center space-x-3">
-                  <h1 className="text-2xl font-bold text-white">{control.requirementId}</h1>
+                  <h1 className="text-2xl font-bold text-white">{control.requirementId} - {control.title}</h1>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${getStatusColor(control.implementationStatus)}`}>
                     {control.implementationStatus.replace('_', ' ')}
                   </span>
                 </div>
-                <p className="text-sm text-gray-400 mt-1">{control.title}</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">

@@ -9,7 +9,7 @@ import {
   IsBoolean,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   ControlImplementationStatus,
   ControlPriority,
@@ -25,6 +25,7 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Control code from controls service' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   controlCode?: string;
 
   @ApiPropertyOptional({ description: 'External control ID' })
@@ -47,11 +48,13 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Rationale for the control' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   rationale?: string;
 
   @ApiPropertyOptional({ description: 'Implementation guidance' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   guidance?: string;
 
   @ApiPropertyOptional({ enum: ControlImplementationStatus })
@@ -67,11 +70,13 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Control category' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   category?: string;
 
   @ApiProperty({ description: 'Control domain (e.g., security, privacy, compliance)' })
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   domain?: string;
 
   @ApiPropertyOptional({ description: 'Control families' })
@@ -92,6 +97,7 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Control owner email' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   ownerEmail?: string;
 
   @ApiPropertyOptional({ description: 'Implementation date' })
@@ -109,11 +115,13 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Implementation notes' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   implementationNotes?: string;
 
   @ApiPropertyOptional({ description: 'Testing procedure' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   testingProcedure?: string;
 
   @ApiPropertyOptional({ description: 'Requires evidence' })
@@ -134,6 +142,7 @@ export class CreateFrameworkControlDto {
   @ApiPropertyOptional({ description: 'Risk level' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   riskLevel?: string;
 
   @ApiPropertyOptional({ description: 'Tags' })

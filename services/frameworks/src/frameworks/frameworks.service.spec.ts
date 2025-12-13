@@ -31,6 +31,10 @@ describe('FrameworksService - Intended Functionality Only', () => {
     createQueryBuilder: jest.fn(() => mockQueryBuilder),
   };
 
+  const mockControlQueryBuilder = {
+    getMany: jest.fn(),
+  };
+
   const mockControlRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -39,6 +43,7 @@ describe('FrameworksService - Intended Functionality Only', () => {
     update: jest.fn(),
     delete: jest.fn(),
     remove: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockControlQueryBuilder),
   };
 
   beforeEach(async () => {

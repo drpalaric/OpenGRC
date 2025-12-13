@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Framework } from './entities/framework.entity';
 import { FrameworkControl } from './entities/framework-control.entity';
 import { CreateFrameworkDto } from './dto/create-framework.dto';
@@ -200,9 +200,7 @@ async addControl(
   }
 
   async findAllControls(): Promise<FrameworkControl[]> {
-    return this.frameworkControlRepository
-      .createQueryBuilder('control')
-      .getMany();
+    return this.frameworkControlRepository.find();
   }
 
   async findControl(id: string): Promise<FrameworkControl> {

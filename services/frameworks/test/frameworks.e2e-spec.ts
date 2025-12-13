@@ -415,6 +415,7 @@ describe('Frameworks API (e2e) - Intended Functionality', () => {
         .get('/api/frameworks/controls')
         .expect(200)
         .expect((res) => {
+          // API returns array directly for this endpoint (not paginated)
           expect(res.body).toBeInstanceOf(Array);
           expect(res.body.length).toBeGreaterThanOrEqual(2);
         });

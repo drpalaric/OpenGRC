@@ -9,7 +9,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { FrameworksService } from './frameworks.service';
@@ -24,7 +23,6 @@ import { FrameworkControl } from './entities/framework-control.entity';
 @ApiTags('frameworks')
 @Controller()
 export class FrameworksController {
-  private readonly logger = new Logger(FrameworksController.name);
   constructor(private readonly frameworksService: FrameworksService) {}
 
   @Post()
@@ -38,17 +36,6 @@ export class FrameworksController {
     return this.frameworksService.create(createFrameworkDto);
   }
 
-  @Post('controls')
-  @ApiOperation({ summary: 'Create a new framework control' })
-  @ApiResponse({
-    status: 201,
-    description: 'Framework control created successfully',
-    type: FrameworkControl,
-  })
-  createControl(@Body() createFrameworkControlDto: CreateFrameworkControlDto) {
-    return this.frameworksService.addControl(createFrameworkControlDto);
-  }
-
   @Get()
   @ApiOperation({ summary: 'Get all frameworks with filtering and pagination' })
   @ApiResponse({
@@ -59,6 +46,7 @@ export class FrameworksController {
     return this.frameworksService.findAll(filterDto);
   }
 
+  // Specific routes BEFORE parameterized routes to avoid conflicts
   @Get('code/:code')
   @ApiOperation({ summary: 'Get framework by code' })
   @ApiParam({ name: 'code', description: 'Framework code' })
@@ -71,7 +59,7 @@ export class FrameworksController {
     return this.frameworksService.findByCode(code);
   }
 
-@Get('controls')
+  @Get('controls')
   @ApiOperation({ summary: 'Get all controls' })
   @ApiResponse({
     status: 200,
@@ -81,30 +69,15 @@ export class FrameworksController {
     return this.frameworksService.findAllControls();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get framework by ID' })
-  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @Post('controls')
+  @ApiOperation({ summary: 'Create a new framework control' })
   @ApiResponse({
-    status: 200,
-    description: 'Framework retrieved successfully',
-    type: Framework,
+    status: 201,
+    description: 'Framework control created successfully',
+    type: FrameworkControl,
   })
-  findOne(@Param('id') id: string) {
-    return this.frameworksService.findOne(id);
-  }
-
-  @Get(':id/controls')
-  @ApiOperation({ summary: 'Get all controls for a framework with optional domain filter' })
-  @ApiParam({ name: 'id', description: 'Framework ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Controls retrieved successfully',
-  })
-  findControls(
-    @Param('id') frameworkId: string,
-    @Query('domain') domain?: string,
-  ) {
-    return this.frameworksService.findControls(frameworkId, domain);
+  createControl(@Body() createFrameworkControlDto: CreateFrameworkControlDto) {
+    return this.frameworksService.addControl(createFrameworkControlDto);
   }
 
   @Get('controls/:id')
@@ -141,6 +114,54 @@ export class FrameworksController {
   @ApiResponse({ status: 204, description: 'Control deleted successfully' })
   removeControl(@Param('id') id: string) {
     return this.frameworksService.removeControl(id);
+  }
+
+  // Framework-specific routes with :id parameter
+  @Get(':id')
+  @ApiOperation({ summary: 'Get framework by ID' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Framework retrieved successfully',
+    type: Framework,
+  })
+  findOne(@Param('id') id: string) {
+    return this.frameworksService.findOne(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update framework' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Framework updated successfully',
+    type: Framework,
+  })
+  update(@Param('id') id: string, @Body() updateFrameworkDto: UpdateFrameworkDto) {
+    return this.frameworksService.update(id, updateFrameworkDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete framework' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({ status: 204, description: 'Framework deleted successfully' })
+  remove(@Param('id') id: string) {
+    return this.frameworksService.remove(id);
+  }
+
+  @Get(':id/controls')
+  @ApiOperation({ summary: 'Get all controls for a framework with optional domain filter' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Controls retrieved successfully',
+  })
+  findControls(
+    @Param('id') frameworkId: string,
+    @Query('domain') domain?: string,
+  ) {
+    return this.frameworksService.findControls(frameworkId, domain);
   }
 
   // Progress tracking

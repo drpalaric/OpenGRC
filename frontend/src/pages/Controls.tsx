@@ -130,7 +130,24 @@ export default function Controls() {
   };
 
   // Filter controls
-  const filteredControls = allControls;
+  const filteredControls = allControls.filter(control => {
+    if (filterFramework && filterFramework === 'unassigned') {
+      return !control.frameworkId;
+    }
+    if (filterFramework && control.frameworkId !== filterFramework) {
+      return false;
+    }
+    if (filterDomain && control.domain !== filterDomain) {
+      return false;
+    }
+    if (filterCategory && control.category !== filterCategory) {
+      return false;
+    }
+    if (filterStatus && control.implementationStatus !== filterStatus) {
+      return false;
+    }
+    return true;
+  });
 
   // Get unique categories for filter
   const uniqueCategories = Array.from(new Set(allControls.map(c => c.category))).filter(Boolean);
@@ -188,6 +205,7 @@ export default function Controls() {
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm"
             >
               <option value="">All Frameworks</option>
+              <option value="unassigned">Unassigned</option>
               {frameworks.map(fw => (
                 <option key={fw.id} value={fw.id}>{fw.code} - {fw.name}</option>
               ))}

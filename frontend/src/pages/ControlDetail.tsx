@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
+interface Framework {
+  id: string;
+  code: string;
+  name: string;
+}
+
 interface Control {
   id: string;
+  frameworkId?: string | null;
   requirementId: string;
   title: string;
   description: string;
@@ -14,7 +21,6 @@ interface Control {
   guidance?: string;
   testingProcedure?: string;
   rationale?: string;
-  frameworkId?: string;
 }
 
 type TabType = 'details' | 'labels' | 'proof' | 'tests' | 'automations' | 'notes' | 'issues';
@@ -27,12 +33,23 @@ export default function ControlDetail() {
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const [isEditing, setIsEditing] = useState(false);
   const [editedControl, setEditedControl] = useState<Control | null>(null);
-
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
   useEffect(() => {
+    fetchFrameworks();
     if (controlId) {
       fetchControl(controlId);
     }
   }, [controlId]);
+
+  const fetchFrameworks = async () => {
+    try {
+      const response = await fetch('http://localhost:3002/api/frameworks/');
+      const result = await response.json();
+      setFrameworks(result.data || []);
+    } catch (error) {
+      console.error('Error fetching frameworks:', error);
+    }
+  };
 
   const fetchControl = async (id: string) => {
     try {
@@ -49,14 +66,15 @@ export default function ControlDetail() {
 
   const saveControl = async () => {
     if (!editedControl) return;
-
     try {
-      await fetch(`http://localhost:3002/api/frameworks/controls/${editedControl.id}`, {
+      const response = await fetch(`http://localhost:3002/api/frameworks/controls/${editedControl.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editedControl)
       });
-      setControl(editedControl);
+      const result = await response.json();
+      setControl(result.data);
+      setEditedControl(result.data);
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving control:', error);
@@ -196,7 +214,25 @@ export default function ControlDetail() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">ID</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Framework</label>
+                      {isEditing ? (
+                        <select
+                          value={editedControl?.frameworkId || ''}
+                          onChange={(e) => setEditedControl({ ...editedControl!, frameworkId: e.target.value === '' ? null : e.target.value })}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm"
+                        >
+                          <option value="">No Framework</option>
+                          {frameworks.map(fw => (
+                            <option key={fw.id} value={fw.id}>{fw.code} - {fw.name}</option>
+                          ))}
+                      </select>
+                      ) : (
+                        <p className="text-sm text-white">{frameworks.find(f => f.id === control.frameworkId)?.name}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Control ID</label>
                       {isEditing ? (
                         <input
                           type="text"

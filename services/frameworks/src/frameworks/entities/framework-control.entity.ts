@@ -67,7 +67,7 @@ export class FrameworkControl extends BaseEntity {
   category: string;
 
   // Domain field - required for categorizing controls (e.g., 'security', 'privacy', 'compliance')
-  @Column()
+  @Column({ type: 'simple-array', nullable: true })
   domain: string;
 
   @Column({ type: 'simple-array', nullable: true })

@@ -220,12 +220,23 @@ async addControl(
     updateControlDto: UpdateFrameworkControlDto,
   ): Promise<FrameworkControl> {
     const control = await this.findControl(id);
+    const oldFrameworkId = control.frameworkId;
+    
+    // Defensive: works even if class-transformer isn't running
+    if (updateControlDto.frameworkId === '') updateControlDto.frameworkId = null;
+    
     Object.assign(control, updateControlDto);
+
     const updated = await this.frameworkControlRepository.save(control);
 
-    // Update framework progress
-    if (control.frameworkId) {
-      await this.updateFrameworkProgress(control.frameworkId);
+    // Update framework progress for the old framework id the control as moved
+    if (oldFrameworkId && oldFrameworkId !== updated.frameworkId) {
+      await this.updateFrameworkProgress(oldFrameworkId);
+    }
+
+    // Update progress for the new/current framework
+    if (updated.frameworkId) {
+      await this.updateFrameworkProgress(updated.frameworkId);
     }
 
     return updated;

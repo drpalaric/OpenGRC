@@ -18,19 +18,34 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
+    let errors: any;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      message = exception.message;
+      const exceptionResponse = exception.getResponse();
+      if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        message = (exceptionResponse as any).message || exception.message;
+        errors = (exceptionResponse as any).errors;
+      } else {
+        message = exception.message;
+      }
     } else if (exception instanceof Error) {
       message = exception.message;
     }
 
+    // Log the full error details for debugging
     this.logger.error(`HTTP ${status} Error: ${message}`);
+    if (errors) {
+      this.logger.error(`Validation errors: ${JSON.stringify(errors)}`);
+    }
+    if (request.body) {
+      this.logger.error(`Request body: ${JSON.stringify(request.body)}`);
+    }
 
     response.status(status).json({
       statusCode: status,
       message,
+      errors,
       timestamp: new Date().toISOString(),
       path: request.url,
     });

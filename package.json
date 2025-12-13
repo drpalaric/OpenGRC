@@ -1,0 +1,45 @@
+{
+  "name": "@grceng/platform",
+  "version": "1.0.0",
+  "description": "A complete, modular, containerized GRC platform",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "docker-compose up",
+    "dev:services": "concurrently \"npm:dev:*\"",
+    "dev:controls": "cd services/controls && npm run dev",
+    "dev:frameworks": "cd services/frameworks && npm run dev",
+    "dev:policies": "cd services/policies && npm run dev",
+    "dev:tprm": "cd services/tprm && npm run dev",
+    "dev:trust": "cd services/trust && npm run dev",
+    "dev:audit": "cd services/audit && npm run dev",
+    "dev:risk": "cd services/risk && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "terraform:init": "cd infrastructure/terraform && terraform init",
+    "terraform:plan": "cd infrastructure/terraform && terraform plan",
+    "terraform:apply": "cd infrastructure/terraform && terraform apply",
+    "backup:create": "node scripts/backup.js",
+    "backup:restore": "node scripts/restore.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

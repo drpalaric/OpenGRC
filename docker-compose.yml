@@ -1,0 +1,59 @@
+networks:
+  grc-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: grc-postgres
+    environment:
+      POSTGRES_USER: grcadmin
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: grc
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - grc-network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grcadmin -d grc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./services/frameworks
+    container_name: grc-backend
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      DATABASE_URL: postgresql://grcadmin:changeme@postgres:5432/grc
+    ports:
+      - "3002:3002"
+    networks:
+      - grc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: grc-frontend
+    environment:
+      VITE_API_URL: http://localhost
+    networks:
+      - grc-network
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

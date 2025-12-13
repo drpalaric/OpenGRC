@@ -8,7 +8,7 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-white">Dashboard</h1>
 
       {/* Quick Actions Widget */}
-      <div className="bg-gray-900 border border-gray-800 overflow-hidden shadow rounded-lg">
+      <div className="bg-black border border-gray-800 overflow-hidden shadow rounded-lg">
         <div className="p-5">
           <div className="flex items-center">
             <div className="w-full">
@@ -29,7 +29,7 @@ export default function Dashboard() {
       </div>
 
       {/* Getting Started Section */}
-      <div className="bg-gray-900 border border-gray-800 shadow rounded-lg">
+      <div className="bg-black border border-gray-800 shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-white">
             Getting Started

@@ -107,4 +107,31 @@ describe('Dashboard Component', () => {
     const dashboard = container.querySelector('[class*="space-y"]');
     expect(dashboard).toBeInTheDocument();
   });
+
+  it('should render widget boxes with black background and gray border', () => {
+    const { container } = render(
+      <BrowserRouter>
+        <Dashboard />
+      </BrowserRouter>
+    );
+
+    // Find widget boxes (Quick Actions and Getting Started)
+    const widgets = container.querySelectorAll('.bg-black.border.border-gray-800');
+    expect(widgets.length).toBeGreaterThan(0);
+  });
+
+  it('should use amber color for Quick Actions links', () => {
+    render(
+      <BrowserRouter>
+        <Dashboard />
+      </BrowserRouter>
+    );
+
+    const controlsLink = screen.getByRole('link', { name: /Manage Controls/i });
+    const risksLink = screen.getByRole('link', { name: /Manage Risks/i });
+
+    // Links should have amber color (text-amber-400)
+    expect(controlsLink).toHaveClass('text-amber-400');
+    expect(risksLink).toHaveClass('text-amber-400');
+  });
 });

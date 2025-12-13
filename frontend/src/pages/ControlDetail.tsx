@@ -74,7 +74,7 @@ export default function ControlDetail() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'text-red-400';
+      case 'critical': return 'text-amber-400';
       case 'high': return 'text-orange-400';
       case 'medium': return 'text-yellow-400';
       case 'low': return 'text-green-400';
@@ -101,7 +101,7 @@ export default function ControlDetail() {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="bg-black border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -156,7 +156,7 @@ export default function ControlDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-gray-900 border-b border-gray-800">
+      <div className="bg-black border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {[
@@ -191,7 +191,7 @@ export default function ControlDetail() {
           <div className="lg:col-span-2">
             {activeTab === 'details' && (
               <div className="space-y-6">
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                <div className="bg-black border border-gray-800 rounded-lg p-6">
                   <h3 className="text-sm font-medium text-gray-400 mb-4">Control Information</h3>
 
                   <div className="space-y-4">
@@ -318,7 +318,7 @@ export default function ControlDetail() {
                 </div>
 
                 {/* Links Section */}
-                <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+                <div className="bg-black border border-gray-800 rounded-lg p-6">
                   <h3 className="text-sm font-medium text-gray-400 mb-4">Links</h3>
                   <div className="flex space-x-4 border-b border-gray-800">
                     <button className="pb-2 px-1 text-sm font-medium text-indigo-500 border-b-2 border-indigo-500">
@@ -348,37 +348,37 @@ export default function ControlDetail() {
             )}
 
             {activeTab === 'labels' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Labels feature coming soon</p>
               </div>
             )}
 
             {activeTab === 'proof' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Proof/Evidence upload coming soon</p>
               </div>
             )}
 
             {activeTab === 'tests' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Tests feature coming soon</p>
               </div>
             )}
 
             {activeTab === 'automations' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Automations feature coming soon</p>
               </div>
             )}
 
             {activeTab === 'notes' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Notes feature coming soon</p>
               </div>
             )}
 
             {activeTab === 'issues' && (
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+              <div className="bg-black border border-gray-800 rounded-lg p-6">
                 <p className="text-sm text-gray-400">Issues tracking coming soon</p>
               </div>
             )}
@@ -386,7 +386,7 @@ export default function ControlDetail() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+            <div className="bg-black border border-gray-800 rounded-lg p-6">
               <h3 className="text-sm font-medium text-gray-400 mb-4">Status</h3>
               <div className="space-y-3">
                 <div>
@@ -418,12 +418,12 @@ export default function ControlDetail() {
               </div>
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+            <div className="bg-black border border-gray-800 rounded-lg p-6">
               <h3 className="text-sm font-medium text-gray-400 mb-4">Automation</h3>
               <p className="text-sm text-gray-500">Not started</p>
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+            <div className="bg-black border border-gray-800 rounded-lg p-6">
               <h3 className="text-sm font-medium text-gray-400 mb-4">Issues</h3>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">

@@ -96,7 +96,7 @@ export default function Frameworks() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-900 text-red-200';
+      case 'critical': return 'bg-amber-900 text-amber-200';
       case 'high': return 'bg-orange-900 text-orange-200';
       case 'medium': return 'bg-yellow-900 text-yellow-200';
       case 'low': return 'bg-green-900 text-green-200';
@@ -232,7 +232,7 @@ export default function Frameworks() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Frameworks List */}
         <div className="lg:col-span-1">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow">
+          <div className="bg-black border border-gray-800 rounded-lg shadow">
             <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
               <h2 className="text-lg font-medium text-white">Frameworks ({frameworks.length})</h2>
               <button
@@ -296,7 +296,7 @@ export default function Frameworks() {
           {selectedFramework ? (
             <>
               {/* Framework Info */}
-              <div className="bg-gray-900 border border-gray-800 rounded-lg shadow mb-6">
+              <div className="bg-black border border-gray-800 rounded-lg shadow mb-6">
                 <div className="px-6 py-4 border-b border-gray-800">
                   <div className="flex items-start justify-between">
                     <div>
@@ -342,7 +342,7 @@ export default function Frameworks() {
               </div>
 
               {/* Controls List */}
-              <div className="bg-gray-900 border border-gray-800 rounded-lg shadow">
+              <div className="bg-black border border-gray-800 rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
                   <h3 className="text-lg font-medium text-white">
                     Controls ({controls.length})
@@ -409,7 +409,7 @@ export default function Frameworks() {
               </div>
             </>
           ) : (
-            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow h-96 flex items-center justify-center">
+            <div className="bg-black border border-gray-800 rounded-lg shadow h-96 flex items-center justify-center">
               <div className="text-center">
                 <svg className="mx-auto h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -425,7 +425,7 @@ export default function Frameworks() {
       {/* Edit Control Modal */}
       {editingControl && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-medium text-white">Edit Control</h3>
               <button
@@ -612,7 +612,7 @@ export default function Frameworks() {
       {/* Create Control Modal */}
       {isCreatingControl && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-medium text-white">Add New Control</h3>
               <button
@@ -628,7 +628,7 @@ export default function Frameworks() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Requirement ID <span className="text-red-400">*</span>
+                    Requirement ID <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -640,7 +640,7 @@ export default function Frameworks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Title <span className="text-red-400">*</span>
+                    Title <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -652,7 +652,7 @@ export default function Frameworks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Description <span className="text-red-400">*</span>
+                    Description <span className="text-amber-400">*</span>
                   </label>
                   <textarea
                     value={newControl.description}
@@ -789,7 +789,7 @@ export default function Frameworks() {
       {/* Create Framework Modal */}
       {isCreatingFramework && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-medium text-white">Create New Framework</h3>
               <button
@@ -805,7 +805,7 @@ export default function Frameworks() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Code <span className="text-red-400">*</span>
+                    Code <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -817,7 +817,7 @@ export default function Frameworks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Name <span className="text-red-400">*</span>
+                    Name <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -829,7 +829,7 @@ export default function Frameworks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Description <span className="text-red-400">*</span>
+                    Description <span className="text-amber-400">*</span>
                   </label>
                   <textarea
                     value={newFramework.description}
@@ -841,7 +841,7 @@ export default function Frameworks() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Type <span className="text-red-400">*</span>
+                    Type <span className="text-amber-400">*</span>
                   </label>
                   <select
                     value={newFramework.type}

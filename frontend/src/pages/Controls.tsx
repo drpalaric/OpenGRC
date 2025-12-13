@@ -112,7 +112,7 @@ export default function Controls() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-900 text-red-200';
+      case 'critical': return 'bg-amber-900 text-amber-200';
       case 'high': return 'bg-orange-900 text-orange-200';
       case 'medium': return 'bg-yellow-900 text-yellow-200';
       case 'low': return 'bg-green-900 text-green-200';
@@ -193,7 +193,7 @@ export default function Controls() {
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg shadow mb-6 p-4">
+      <div className="bg-black border border-gray-800 rounded-lg shadow mb-6 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -280,7 +280,7 @@ export default function Controls() {
       </div>
 
       {/* Controls List */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg shadow">
+      <div className="bg-black border border-gray-800 rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-800">
           <h3 className="text-lg font-medium text-white">
             Controls ({filteredControls.length})
@@ -343,7 +343,7 @@ export default function Controls() {
       {/* Create Control Modal */}
       {isCreatingControl && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-medium text-white">Create New Control</h3>
               <button
@@ -359,7 +359,7 @@ export default function Controls() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Framework <span className="text-red-400">*</span>
+                    Framework <span className="text-amber-400">*</span>
                   </label>
                   <select
                     value={newControl.frameworkId ?? ''}
@@ -374,7 +374,7 @@ export default function Controls() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Requirement ID <span className="text-red-400">*</span>
+                    Requirement ID <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -386,7 +386,7 @@ export default function Controls() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Title <span className="text-red-400">*</span>
+                    Title <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -398,7 +398,7 @@ export default function Controls() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Description <span className="text-red-400">*</span>
+                    Description <span className="text-amber-400">*</span>
                   </label>
                   <textarea
                     value={newControl.description}
@@ -410,7 +410,7 @@ export default function Controls() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Category <span className="text-red-400">*</span>
+                    Category <span className="text-amber-400">*</span>
                   </label>
                   <input
                     type="text"

@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Controls from './pages/Controls';
 import Frameworks from './pages/Frameworks';
 import Risks from './pages/Risks';
+import RiskDetails from './pages/RiskDetails';
 import ControlDetail from './pages/ControlDetail';
 
 /**
@@ -21,6 +22,7 @@ function App() {
           <Route path="/controls" element={<Controls />} />
           <Route path="/controls/:controlId" element={<ControlDetail />} />
           <Route path="/risks" element={<Risks />} />
+          <Route path="/risks/:id" element={<RiskDetails />} />
         </Routes>
       </Layout>
     </Router>

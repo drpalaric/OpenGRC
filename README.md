@@ -339,3 +339,119 @@ npm run build
 - ✅ App component tests (routing, integration)
 
 All tests written following **Test-Driven Development (TDD)** principles.
+
+## Risk Management
+
+The platform includes a comprehensive Risk Management module for identifying, tracking, and mitigating organizational risks.
+
+### Features
+
+**Risk CRUD Operations:**
+- Create risks with custom IDs and detailed attributes
+- View risks in a tabular format with color-coded severity levels
+- Link risks to controls for mitigation tracking
+- Search and filter controls when linking to risks
+
+**Risk Fields:**
+- **Risk ID*** (required): Custom identifier (e.g., RISK-001)
+- **Title*** (required): Brief description of the risk
+- **Description**: Detailed risk explanation
+- **Inherent Likelihood**: Risk probability before controls (very_low, low, medium, high, critical)
+- **Inherent Impact**: Risk severity before controls (very_low, low, medium, high, critical)
+- **Residual Likelihood**: Risk probability after controls
+- **Residual Impact**: Risk severity after controls
+- **Treatment**: Risk response strategy (Accept, Mitigate, Transfer, Avoid)
+- **Threats**: Potential threat sources
+- **Linked Controls**: Array of control IDs for mitigation
+- **Risk Owner**: Person responsible for the risk
+- **Creator**: User who created the risk entry
+- **Business Unit**: Organizational unit affected
+- **Assets**: Affected systems or resources
+
+### Color Coding
+
+Risk levels are visually indicated with distinct colors:
+
+| Level      | Color         | Tailwind Class | Description |
+|------------|---------------|----------------|-------------|
+| Very Low   | White         | `bg-white`     | Minimal risk |
+| Low        | Light Gray    | `bg-gray-300`  | Low impact/likelihood |
+| Medium     | Amber         | `bg-amber-500` | Moderate risk requiring attention |
+| High       | Red-Orange    | `bg-orange-600`| Significant risk needing mitigation |
+| Critical   | Maroon        | `bg-red-900`   | Severe risk requiring immediate action |
+
+### Control Linking
+
+Risks can be linked to existing controls for mitigation tracking:
+
+- **Search**: Filter controls by title, description, or ID
+- **Multi-select**: Link multiple controls to a single risk
+- **Display**: Shows first 3 controls in risk list, then "..." for additional controls
+- **Integration**: Uses existing Controls module data
+
+### API Endpoints
+
+All risk endpoints are available under `/api/frameworks/risks`:
+
+```bash
+# Get all risks
+GET /api/frameworks/risks
+
+# Get risk by ID
+GET /api/frameworks/risks/:id
+
+# Create new risk
+POST /api/frameworks/risks
+{
+  "riskId": "RISK-001",
+  "title": "Data Breach",
+  "description": "Risk of unauthorized data access",
+  "inherentLikelihood": "high",
+  "inherentImpact": "critical",
+  "riskOwner": "CISO",
+  "treatment": "Mitigate"
+}
+
+# Update risk
+PUT /api/frameworks/risks/:id
+
+# Delete risk
+DELETE /api/frameworks/risks/:id
+```
+
+### Testing
+
+**Backend Tests (15 tests):**
+- ✅ Create risk with all fields
+- ✅ Validation for required fields (riskId, title)
+- ✅ Enum validation (risk levels, treatment options)
+- ✅ Duplicate riskId prevention
+- ✅ Find all risks with ordering
+- ✅ Find risk by ID
+- ✅ Update risk
+- ✅ Delete risk
+- ✅ Error handling (NotFoundException, BadRequestException)
+
+**Frontend Tests (18 tests):**
+- ✅ Page structure and styling
+- ✅ Risk list display with all columns
+- ✅ Linked control display with "..." for >3 controls
+- ✅ Empty state handling
+- ✅ Color coding for all 5 risk levels
+- ✅ Create risk modal with all fields
+- ✅ Required field markers
+- ✅ Modal open/close functionality
+- ✅ Control linking section
+- ✅ Control search functionality
+
+All tests follow **Test-Driven Development (TDD)**: Red → Green → Refactor
+
+### Example Usage
+
+1. **Navigate to Risk Management** page from the sidebar
+2. **Click "Add Risk"** to open the creation modal
+3. **Fill in required fields**: Risk ID and Title
+4. **Set risk levels**: Choose inherent likelihood and impact
+5. **Link controls**: Search and select relevant controls
+6. **Select treatment**: Choose risk response strategy (Accept/Mitigate/Transfer/Avoid)
+7. **Save**: Risk appears in the list with color-coded severity levels

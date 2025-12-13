@@ -31,6 +31,7 @@ docker-compose down
 
 - **Backend**: NestJS, TypeScript, TypeORM
 - **Frontend**: React, TypeScript, Vite, TailwindCSS
+- **Testing**: Vitest, React Testing Library
 - **Database**: PostgreSQL 16
 - **Deployment**: Docker Compose
 
@@ -279,3 +280,62 @@ npm run test:e2e
 ```
 
 Tests verify the system works as designed and doesn't do anything it's not supposed to.
+
+## Frontend
+
+### UI Design
+
+The frontend uses a **Jira-inspired dark theme** with sidebar navigation:
+
+**Color Scheme:**
+- **Black backgrounds** (#000000) for main surfaces
+- **Amber accents** (#F59E0B, #FBBF24) for active states and interactive elements
+- **White text** for primary content
+- **Gray tones** for secondary content and borders
+
+**Layout:**
+```
+┌──────────────┬─────────────────────────────┐
+│   Sidebar    │      Main Content          │
+│   (256px)    │      (Scrollable)          │
+│              │                             │
+│  Dashboard   │   ┌─────────────────┐      │
+│  Frameworks  │   │  Page Content   │      │
+│  Controls    │   │  with 24px      │      │
+│  Risks       │   │  padding        │      │
+│              │   └─────────────────┘      │
+└──────────────┴─────────────────────────────┘
+```
+
+**Features:**
+- Fixed sidebar navigation (always visible)
+- Active route highlighting with amber background
+- Responsive padding (1.5rem/24px like Jira)
+- Consistent dark theme across all pages
+- Future support for collapsible submenus
+
+### Frontend Testing
+
+```bash
+cd frontend
+
+# Run tests in watch mode
+npm test
+
+# Run tests once
+npm run test:run
+
+# Run tests with UI
+npm run test:ui
+
+# Build production bundle
+npm run build
+```
+
+**Test Coverage:**
+- ✅ Sidebar component tests (navigation, active states, styling)
+- ✅ Layout component tests (structure, responsive design)
+- ✅ Dashboard tests (widget presence, navigation)
+- ✅ App component tests (routing, integration)
+
+All tests written following **Test-Driven Development (TDD)** principles.

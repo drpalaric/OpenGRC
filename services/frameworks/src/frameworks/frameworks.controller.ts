@@ -38,6 +38,17 @@ export class FrameworksController {
     return this.frameworksService.create(createFrameworkDto);
   }
 
+  @Post('controls')
+  @ApiOperation({ summary: 'Create a new framework control' })
+  @ApiResponse({
+    status: 201,
+    description: 'Framework control created successfully',
+    type: FrameworkControl,
+  })
+  createControl(@Body() createFrameworkControlDto: CreateFrameworkControlDto) {
+    return this.frameworksService.addControl(createFrameworkControlDto);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all frameworks with filtering and pagination' })
   @ApiResponse({

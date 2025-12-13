@@ -68,7 +68,7 @@ export default function Frameworks() {
 
   const fetchFrameworks = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/frameworks/frameworks');
+      const response = await fetch('http://localhost:3002/api/frameworks');
       const result = await response.json();
       // API returns paginated data with structure: { data: [...], total, page, limit }
       setFrameworks(result.data || []);
@@ -81,7 +81,7 @@ export default function Frameworks() {
 
   const fetchControls = async (frameworkId: string) => {
     try {
-      const response = await fetch(`http://localhost:3002/api/frameworks/frameworks/${frameworkId}/controls`);
+      const response = await fetch(`http://localhost:3002/api/frameworks/${frameworkId}/controls`);
       const result = await response.json();
       setControls(result.data || []);
     } catch (error) {
@@ -116,7 +116,7 @@ export default function Frameworks() {
   const saveControl = async (controlId: string, updates: Partial<FrameworkControl>) => {
     setSaving(true);
     try {
-      await fetch(`http://localhost:3002/api/frameworks/frameworks/controls/${controlId}`, {
+      await fetch(`http://localhost:3002/api/frameworks/controls/${controlId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -137,7 +137,7 @@ export default function Frameworks() {
 
     setSaving(true);
     try {
-      await fetch('http://localhost:3002/api/frameworks/frameworks/controls', {
+      await fetch('http://localhost:3002/api/frameworks/controls', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,7 +173,7 @@ export default function Frameworks() {
   const createFramework = async () => {
     setSaving(true);
     try {
-      const response = await fetch('http://localhost:3002/api/frameworks/frameworks', {
+      const response = await fetch('http://localhost:3002/api/frameworks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newFramework)

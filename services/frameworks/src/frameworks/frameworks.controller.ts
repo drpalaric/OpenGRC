@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { FrameworksService } from './frameworks.service';
@@ -125,7 +126,7 @@ export class FrameworksController {
     description: 'Framework retrieved successfully',
     type: Framework,
   })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.frameworksService.findOne(id);
   }
 
@@ -137,7 +138,7 @@ export class FrameworksController {
     description: 'Framework updated successfully',
     type: Framework,
   })
-  update(@Param('id') id: string, @Body() updateFrameworkDto: UpdateFrameworkDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateFrameworkDto: UpdateFrameworkDto) {
     return this.frameworksService.update(id, updateFrameworkDto);
   }
 
@@ -146,7 +147,7 @@ export class FrameworksController {
   @ApiOperation({ summary: 'Delete framework' })
   @ApiParam({ name: 'id', description: 'Framework ID' })
   @ApiResponse({ status: 204, description: 'Framework deleted successfully' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.frameworksService.remove(id);
   }
 
@@ -158,7 +159,7 @@ export class FrameworksController {
     description: 'Controls retrieved successfully',
   })
   findControls(
-    @Param('id') frameworkId: string,
+    @Param('id', ParseUUIDPipe) frameworkId: string,
     @Query('domain') domain?: string,
   ) {
     return this.frameworksService.findControls(frameworkId, domain);
@@ -173,7 +174,7 @@ export class FrameworksController {
     description: 'Progress updated successfully',
     type: Framework,
   })
-  updateProgress(@Param('id') frameworkId: string) {
+  updateProgress(@Param('id', ParseUUIDPipe) frameworkId: string) {
     return this.frameworksService.updateFrameworkProgress(frameworkId);
   }
 
@@ -185,7 +186,7 @@ export class FrameworksController {
     status: 200,
     description: 'Risk report generated successfully',
   })
-  getRiskReport(@Param('id') frameworkId: string) {
+  getRiskReport(@Param('id', ParseUUIDPipe) frameworkId: string) {
     return this.frameworksService.getFrameworkRiskReport(frameworkId);
   }
 }

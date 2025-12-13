@@ -8,14 +8,14 @@ volumes:
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18.1
     container_name: grc-postgres
     environment:
       POSTGRES_USER: grcadmin
       POSTGRES_PASSWORD: changeme
       POSTGRES_DB: grc
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     networks:
       - grc-network
     ports:

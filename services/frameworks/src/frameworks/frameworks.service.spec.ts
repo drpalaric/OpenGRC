@@ -358,25 +358,41 @@ describe('FrameworksService - Intended Functionality Only', () => {
     });
   });
 
-  describe('Domain Field - Required and Filtering', () => {
-    it('should NOT allow creating control without domain field', async () => {
-      // Domain is a required field - creating without it should fail
+  describe('Domain Field - Optional and Filtering', () => {
+    it('should allow creating control without domain field (domain is optional)', async () => {
+      // Domain is an optional field - creating without it should succeed
       const createDtoWithoutDomain = {
         frameworkId: 'fw-123',
         requirementId: 'REQ-001',
         title: 'Access Control',
         description: 'Control access to systems',
-        // domain is missing - this violates the requirement
+        // domain is optional - can be omitted
       };
 
-      // This test verifies that domain is a required field
-      // The DTO validation should catch this at the controller level
-      // Service should only receive valid DTOs with domain field
-      expect(createDtoWithoutDomain).not.toHaveProperty('domain');
+      const savedControl = {
+        id: 'ctrl-456',
+        ...createDtoWithoutDomain,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const framework = { id: 'fw-123', totalControls: 0 };
+
+      mockControlRepository.create.mockReturnValue(savedControl);
+      mockControlRepository.save.mockResolvedValue(savedControl);
+      mockControlRepository.find.mockResolvedValue([savedControl]);
+      mockFrameworkRepository.findOne.mockResolvedValue(framework);
+      mockFrameworkRepository.save.mockResolvedValue(framework);
+
+      const result = await service.addControl(createDtoWithoutDomain as any);
+
+      // Should succeed even without domain field
+      expect(mockControlRepository.save).toHaveBeenCalled();
+      expect(result).toEqual(savedControl);
     });
 
-    it('should create a control with domain as required field', async () => {
-      // Domain is now a required field for controls
+    it('should create a control with domain field when provided', async () => {
+      // Domain can be provided as an optional field
       const createDto = {
         frameworkId: 'fw-123',
         requirementId: 'REQ-001',

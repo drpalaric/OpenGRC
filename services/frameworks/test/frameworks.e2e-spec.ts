@@ -481,29 +481,33 @@ describe('Frameworks API (e2e) - Intended Functionality', () => {
   });
 
   describe('Domain Field - Required and Filtering', () => {
-    it('should require domain field when creating a control', async () => {
+    it('should allow creating control without domain field (domain is optional)', async () => {
       const fwRes = await request(app.getHttpServer())
         .post('/api/frameworks')
         .send({
-          code: 'DOMAIN-REQ',
-          name: 'Domain Required Test',
-          description: 'Test domain requirement',
+          code: 'DOMAIN-OPT',
+          name: 'Domain Optional Test',
+          description: 'Test domain as optional',
           type: 'security',
         });
 
       const frameworkId = fwRes.body.data.id;
 
-      // Attempt to create control without domain should fail
-      await request(app.getHttpServer())
+      // Creating control without domain should succeed
+      return request(app.getHttpServer())
         .post('/api/frameworks/controls')
         .send({
           frameworkId,
           requirementId: 'REQ-001',
           title: 'Access Control',
           description: 'Control without domain',
-          // domain is missing - should fail validation
+          // domain is optional - should succeed
         })
-        .expect(400);
+        .expect(201)
+        .expect((res) => {
+          expect(res.body.data.requirementId).toBe('REQ-001');
+          expect(res.body.data.domain).toBeUndefined();
+        });
     });
 
     it('should create a control with domain field', async () => {

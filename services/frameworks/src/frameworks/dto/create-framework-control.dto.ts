@@ -71,7 +71,8 @@ export class CreateFrameworkControlDto {
 
   @ApiProperty({ description: 'Control domain (e.g., security, privacy, compliance)' })
   @IsString()
-  domain: string;
+  @IsOptional()
+  domain?: string;
 
   @ApiPropertyOptional({ description: 'Control families' })
   @IsOptional()

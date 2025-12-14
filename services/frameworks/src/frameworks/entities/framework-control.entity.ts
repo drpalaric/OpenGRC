@@ -97,6 +97,9 @@ export class FrameworkControl extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   testingProcedure: string;
 
+  @Column({ type: 'text', nullable: true })
+  procedures: string;
+
   @Column({ default: false })
   requiresEvidence: boolean;
 

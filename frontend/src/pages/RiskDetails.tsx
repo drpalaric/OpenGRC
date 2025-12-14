@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 
 // Risk interface matching backend entity
 interface Risk {
@@ -50,6 +50,7 @@ const getRiskLevelColor = (level?: string): string => {
 
 export default function RiskDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [risk, setRisk] = useState<Risk | null>(null);
   const [controls, setControls] = useState<Control[]>([]);
   const [loading, setLoading] = useState(true);
@@ -475,7 +476,11 @@ export default function RiskDetails() {
                 risk.linkedControls.map((controlId) => {
                   const control = getControlDetails(controlId);
                   return (
-                    <div key={controlId} className="bg-gray-900 rounded-md px-4 py-2 border border-gray-800">
+                    <div
+                      key={controlId}
+                      onClick={() => control && navigate(`/controls/${control.id}`)}
+                      className="bg-gray-900 rounded-md px-4 py-2 border border-gray-800 cursor-pointer hover:bg-gray-800 hover:border-amber-600 transition-colors"
+                    >
                       <div className="text-sm font-medium text-amber-400">{controlId}</div>
                       {control && (
                         <>

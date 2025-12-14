@@ -729,6 +729,139 @@ describe('Frameworks API (e2e) - Intended Functionality', () => {
     });
   });
 
+  describe('Control Procedures Field', () => {
+    it('should create a control with procedures field', async () => {
+      // Create a framework first
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'PROC-TEST',
+          name: 'Procedures Test Framework',
+          description: 'Framework for testing procedures field',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create a control with procedures
+      const controlRes = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'PROC-001',
+          title: 'Control with Procedures',
+          description: 'Test control with procedures documentation',
+          category: 'Security',
+          domain: 'security',
+          priority: 'high',
+          implementationStatus: 'implemented',
+          procedures: 'Step 1: Review access logs daily\nStep 2: Report anomalies\nStep 3: Document findings',
+        })
+        .expect(201);
+
+      expect(controlRes.body.data.procedures).toBe('Step 1: Review access logs daily\nStep 2: Report anomalies\nStep 3: Document findings');
+    });
+
+    it('should update a control\'s procedures field', async () => {
+      // Create framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'PROC-UPDATE',
+          name: 'Procedures Update Test',
+          description: 'Test updating procedures',
+          type: 'compliance',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create control without procedures
+      const createRes = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'PROC-002',
+          title: 'Control Without Procedures',
+          description: 'Will add procedures later',
+          category: 'Compliance',
+        })
+        .expect(201);
+
+      const controlId = createRes.body.data.id;
+
+      // Update with procedures
+      const updateRes = await request(app.getHttpServer())
+        .put(`/api/frameworks/controls/${controlId}`)
+        .send({
+          ...createRes.body.data,
+          procedures: 'Updated procedure: Perform quarterly audits',
+        })
+        .expect(200);
+
+      expect(updateRes.body.data.procedures).toBe('Updated procedure: Perform quarterly audits');
+    });
+
+    it('should retrieve a control with procedures field', async () => {
+      // Create framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'PROC-GET',
+          name: 'Procedures Get Test',
+          description: 'Test retrieving procedures',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create control with procedures
+      const createRes = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'PROC-003',
+          title: 'Control for Retrieval',
+          description: 'Test retrieving procedures',
+          category: 'Security',
+          procedures: 'Documented procedures for this control',
+        });
+
+      const controlId = createRes.body.data.id;
+
+      // Get the control
+      const getRes = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${controlId}`)
+        .expect(200);
+
+      expect(getRes.body.data.procedures).toBe('Documented procedures for this control');
+    });
+
+    it('should allow null/undefined procedures field', async () => {
+      // Create framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'PROC-NULL',
+          name: 'Procedures Null Test',
+          description: 'Test null procedures',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create control without procedures field
+      const createRes = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'PROC-004',
+          title: 'Control Without Procedures Field',
+          description: 'No procedures specified',
+          category: 'Security',
+        })
+        .expect(201);
+
+      // Procedures should be null or undefined
+      expect(createRes.body.data.procedures == null).toBe(true);
+    });
+  });
+
   describe('POST /api/frameworks/:id/controls/add-bulk - Bulk Add Controls to Framework', () => {
     it('should add multiple existing controls to a framework (assign frameworkId)', async () => {
       // Create a framework

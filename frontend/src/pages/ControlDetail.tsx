@@ -21,6 +21,17 @@ interface Control {
   guidance?: string;
   testingProcedure?: string;
   rationale?: string;
+  procedures?: string;
+}
+
+interface Risk {
+  id: string;
+  riskId: string;
+  title: string;
+  description?: string;
+  riskLevel?: string;
+  linkedControls?: string[];
+  riskOwner?: string;
 }
 
 type TabType = 'details' | 'labels' | 'proof' | 'tests' | 'automations' | 'notes' | 'issues';
@@ -34,12 +45,22 @@ export default function ControlDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedControl, setEditedControl] = useState<Control | null>(null);
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [linkedRisks, setLinkedRisks] = useState<Risk[]>([]);
+  const [activeLinksTab, setActiveLinksTab] = useState<'risks' | 'vendors' | 'evaluations'>('risks');
+
   useEffect(() => {
     fetchFrameworks();
     if (controlId) {
       fetchControl(controlId);
     }
   }, [controlId]);
+
+  // Fetch linked risks after control is loaded
+  useEffect(() => {
+    if (control) {
+      fetchLinkedRisks();
+    }
+  }, [control]);
 
   const fetchFrameworks = async () => {
     try {
@@ -61,6 +82,26 @@ export default function ControlDetail() {
       console.error('Error fetching control:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLinkedRisks = async () => {
+    if (!control) return;
+
+    try {
+      // Fetch all risks
+      const response = await fetch('http://localhost:3002/api/frameworks/risks');
+      const result = await response.json();
+      const allRisks = result.data || [];
+
+      // Filter risks that have this control's requirementId in their linkedControls array
+      // linkedControls stores requirementId (e.g., "IAC-01"), not UUID
+      const risksLinkedToControl = allRisks.filter((risk: Risk) =>
+        risk.linkedControls?.includes(control.requirementId)
+      );
+      setLinkedRisks(risksLinkedToControl);
+    } catch (error) {
+      console.error('Error fetching linked risks:', error);
     }
   };
 
@@ -349,35 +390,118 @@ export default function ControlDetail() {
                         )}
                       </div>
                     )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Procedures</label>
+                      {isEditing ? (
+                        <textarea
+                          value={editedControl?.procedures || ''}
+                          onChange={(e) => setEditedControl({ ...editedControl!, procedures: e.target.value })}
+                          rows={4}
+                          placeholder="Document the procedures for this control..."
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-300">{control.procedures || '(Not set)'}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Links Section */}
                 <div className="bg-black border border-gray-800 rounded-lg p-6">
-                  <h3 className="text-sm font-medium text-gray-400 mb-4">Links</h3>
+                  <h3 className="text-sm font-medium text-gray-400 mb-4">Linked Risks</h3>
                   <div className="flex space-x-4 border-b border-gray-800">
-                    <button className="pb-2 px-1 text-sm font-medium text-indigo-500 border-b-2 border-indigo-500">
-                      Requirements
-                    </button>
-                    <button className="pb-2 px-1 text-sm font-medium text-gray-400 hover:text-gray-300">
+                    <button
+                      onClick={() => setActiveLinksTab('risks')}
+                      className={`pb-2 px-1 text-sm font-medium ${
+                        activeLinksTab === 'risks'
+                          ? 'text-indigo-500 border-b-2 border-indigo-500'
+                          : 'text-gray-400 hover:text-gray-300'
+                      }`}
+                    >
                       Risks
                     </button>
-                    <button className="pb-2 px-1 text-sm font-medium text-gray-400 hover:text-gray-300">
+                    <button
+                      onClick={() => setActiveLinksTab('vendors')}
+                      className={`pb-2 px-1 text-sm font-medium ${
+                        activeLinksTab === 'vendors'
+                          ? 'text-indigo-500 border-b-2 border-indigo-500'
+                          : 'text-gray-400 hover:text-gray-300'
+                      }`}
+                    >
                       Vendors
                     </button>
-                    <button className="pb-2 px-1 text-sm font-medium text-gray-400 hover:text-gray-300">
-                      Requests
-                    </button>
-                    <button className="pb-2 px-1 text-sm font-medium text-gray-400 hover:text-gray-300">
+                    <button
+                      onClick={() => setActiveLinksTab('evaluations')}
+                      className={`pb-2 px-1 text-sm font-medium ${
+                        activeLinksTab === 'evaluations'
+                          ? 'text-indigo-500 border-b-2 border-indigo-500'
+                          : 'text-gray-400 hover:text-gray-300'
+                      }`}
+                    >
                       Evaluations
                     </button>
                   </div>
-                  <div className="mt-4 text-center py-8">
-                    <p className="text-sm text-gray-500 mb-4">No requirements linked yet</p>
-                    <button className="px-4 py-2 text-sm font-medium text-indigo-400 border border-indigo-500 rounded-md hover:bg-indigo-500 hover:text-white">
-                      + Add
-                    </button>
-                  </div>
+
+                  {activeLinksTab === 'risks' && (
+                    <div className="mt-4">
+                      {linkedRisks.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-sm text-gray-500">No risks linked to this control</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {linkedRisks.map((risk) => (
+                            <div
+                              key={risk.id}
+                              onClick={() => navigate(`/risks/${risk.id}`)}
+                              className="p-3 border border-gray-700 rounded-md hover:bg-gray-800 cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-medium text-amber-400">
+                                      {risk.riskId}
+                                    </span>
+                                    {risk.riskLevel && (
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                        risk.riskLevel === 'critical' ? 'bg-red-900 text-red-200' :
+                                        risk.riskLevel === 'high' ? 'bg-orange-600 text-white' :
+                                        risk.riskLevel === 'medium' ? 'bg-amber-500 text-white' :
+                                        'bg-gray-700 text-gray-300'
+                                      }`}>
+                                        {risk.riskLevel.replace('_', ' ')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="mt-1 text-sm text-white">{risk.title}</p>
+                                  {risk.description && (
+                                    <p className="mt-1 text-xs text-gray-400 line-clamp-2">{risk.description}</p>
+                                  )}
+                                  {risk.riskOwner && (
+                                    <p className="mt-1 text-xs text-gray-500">Owner: {risk.riskOwner}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeLinksTab === 'vendors' && (
+                    <div className="mt-4 text-center py-8">
+                      <p className="text-sm text-gray-500">No vendors linked yet</p>
+                    </div>
+                  )}
+
+                  {activeLinksTab === 'evaluations' && (
+                    <div className="mt-4 text-center py-8">
+                      <p className="text-sm text-gray-500">No evaluations linked yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

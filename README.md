@@ -1,11 +1,11 @@
 # GRC Platform
 
-A simple GRC (Governance, Risk, and Compliance) platform for managing frameworks and controls.
+A simple GRC (Governance, Risk, and Compliance) platform for managing frameworks, controls, and organizational risks.
 
 ## What's Included
 
-- **Backend**: NestJS API for frameworks and controls
-- **Frontend**: React app with framework management UI
+- **Backend**: NestJS API with modular architecture (Frameworks, Risks, Controls)
+- **Frontend**: React app with GRC management UI (Dashboard, Frameworks, Controls, Risks)
 - **Database**: PostgreSQL
 
 ## Quick Start
@@ -31,8 +31,8 @@ docker-compose down
 
 - **Backend**: NestJS, TypeScript, TypeORM
 - **Frontend**: React, TypeScript, Vite, TailwindCSS
-- **Testing**: Vitest, React Testing Library
-- **Database**: PostgreSQL 16
+- **Testing**: Vitest, React Testing Library, Playwright (E2E)
+- **Database**: PostgreSQL 18.1
 - **Deployment**: Docker Compose
 
 ## Architecture: Modules vs Microservices
@@ -62,7 +62,7 @@ This project uses a **modular monolith** architecture instead of microservices.
 │         Backend (Port 3002)                    │
 │                                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │Frameworks│  │  Risks   │  │ Vendors  │   │
+│  │Frameworks│  │  Risks   │  │  Health  │   │
 │  │ Module   │  │  Module  │  │  Module  │   │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
 │       │             │             │          │
@@ -76,7 +76,7 @@ This project uses a **modular monolith** architecture instead of microservices.
             │                 │
             │  • frameworks   │
             │  • risks        │
-            │  • vendors      │
+            │  • controls     │
             └─────────────────┘
 
 3 containers, 1 database, direct calls, simple deployment
@@ -220,7 +220,7 @@ No HTTP calls, no network issues, instant results.
 ## Database
 
 - **Database**: `grc`
-- **Tables**: `frameworks`, `framework_controls`
+- **Tables**: `frameworks`, `framework_controls`, `risks`
 - **User**: `grcadmin`
 - **Password**: `changeme`
 
@@ -259,6 +259,7 @@ npm run test:e2e
 **Intended Functionality** (What SHOULD happen):
 - ✅ Framework CRUD operations work correctly
 - ✅ Control CRUD operations work correctly
+- ✅ Risk CRUD operations work correctly
 - ✅ Data validation catches invalid inputs
 - ✅ Auto-generated UUIDs and timestamps
 - ✅ Proper error handling and status codes
@@ -339,6 +340,31 @@ npm run build
 - ✅ App component tests (routing, integration)
 
 All tests written following **Test-Driven Development (TDD)** principles.
+
+### End-to-End Testing (Playwright)
+
+The platform uses Playwright for comprehensive E2E testing across multiple browsers.
+
+```bash
+# Run E2E tests
+npm run test:e2e
+
+# View test report
+npm run report:e2e
+```
+
+**Test Configuration:**
+- **Test Directory**: `tests/e2e/`
+- **Browsers**: Chromium, Firefox, WebKit, Microsoft Edge, Google Chrome
+- **Parallel Execution**: Enabled for faster test runs
+- **CI Integration**: Configured with retry logic for CI environments
+
+**Features:**
+- ✅ Cross-browser testing (5 browser configurations)
+- ✅ Automatic dev server startup before tests
+- ✅ HTML reporter with detailed test results
+- ✅ Trace collection on test failure for debugging
+- ✅ Parallel test execution for optimal performance
 
 ## Risk Management
 

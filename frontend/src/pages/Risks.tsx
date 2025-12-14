@@ -25,8 +25,9 @@ interface Risk {
 // Control interface for linking
 interface Control {
   id: string;
-  requirementId: string;
-  title: string;
+  controlId: string;
+  name: string;
+  domain: string;
   description: string;
 }
 
@@ -153,16 +154,18 @@ export default function Risks() {
     }
   };
 
-  // Filter controls based on search
-  const filteredControls = controls.filter(control => {
-    if (!controlSearch) return true;
-    const searchLower = controlSearch.toLowerCase();
-    return (
-      control.title.toLowerCase().includes(searchLower) ||
-      control.description.toLowerCase().includes(searchLower) ||
-      control.requirementId.toLowerCase().includes(searchLower)
-    );
-  });
+  // Filter controls based on search and sort alphabetically by controlId
+  const filteredControls = controls
+    .filter(control => {
+      if (!controlSearch) return true;
+      const searchLower = controlSearch.toLowerCase();
+      return (
+        control.name.toLowerCase().includes(searchLower) ||
+        control.description.toLowerCase().includes(searchLower) ||
+        control.controlId.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => a.controlId.localeCompare(b.controlId));
 
   // Render linked controls with "..." if more than 3
   const renderLinkedControls = (linkedControls?: string[]) => {
@@ -170,16 +173,30 @@ export default function Risks() {
       return <span className="text-gray-500">None</span>;
     }
 
-    const displayControls = linkedControls.slice(0, 3);
-    const hasMore = linkedControls.length > 3;
+    // Sort controls alphabetically by controlId
+    const sortedControls = [...linkedControls].sort((a, b) => a.localeCompare(b));
+    const displayControls = sortedControls.slice(0, 3);
+    const hasMore = sortedControls.length > 3;
 
     return (
       <div className="flex flex-wrap gap-1">
-        {displayControls.map(controlId => (
-          <span key={controlId} className="text-xs text-gray-400">
-            {controlId}
-          </span>
-        ))}
+        {displayControls.map(controlId => {
+          // Find the control details from the controls array
+          const control = controls.find(c => c.controlId === controlId);
+          if (control) {
+            return (
+              <span key={controlId} className="text-xs text-gray-400">
+                {control.controlId}, {control.domain}, {control.name}
+              </span>
+            );
+          }
+          // Fallback to just showing the ID if control not found
+          return (
+            <span key={controlId} className="text-xs text-gray-400">
+              {controlId}
+            </span>
+          );
+        })}
         {hasMore && <span className="text-xs text-gray-400">...</span>}
       </div>
     );
@@ -598,13 +615,13 @@ export default function Risks() {
                           <label className="flex items-start cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={newRisk.linkedControls?.includes(control.requirementId) || false}
-                              onChange={() => toggleControlLink(control.requirementId)}
+                              checked={newRisk.linkedControls?.includes(control.controlId) || false}
+                              onChange={() => toggleControlLink(control.controlId)}
                               className="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-700 rounded bg-gray-800"
                             />
                             <div className="ml-3">
                               <div className="text-sm font-medium text-white">
-                                {control.requirementId} - {control.title}
+                                {control.controlId} - {control.name}
                               </div>
                               <div className="text-xs text-gray-400 line-clamp-1">
                                 {control.description}

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import Risks from './Risks';
+import Risks from '../pages/Risks';
 
 /**
  * Risks Page Tests - TDD Implementation
@@ -128,6 +128,140 @@ describe('Risks Page', () => {
       await waitFor(() => {
         expect(screen.getByText(/ctrl-001/)).toBeInTheDocument();
         expect(screen.getByText(/ctrl-002/)).toBeInTheDocument();
+      });
+    });
+
+    it('should display linked controls with controlId, domain, and name', async () => {
+      const mockControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'AST-01',
+          name: 'Asset Inventory',
+          domain: 'Asset Management',
+          description: 'Maintain asset inventory',
+        },
+        {
+          id: 'uuid-2',
+          controlId: 'IAC-02',
+          name: 'Access Control Policy',
+          domain: 'Identity & Access Control',
+          description: 'Define access control policy',
+        },
+      ];
+
+      const mockRisks = [
+        {
+          id: 'risk-1',
+          riskId: 'RISK-001',
+          title: 'Risk with Controls',
+          linkedControls: ['AST-01', 'IAC-02'],
+          inherentLikelihood: 'medium',
+          inherentImpact: 'low',
+        },
+      ];
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        // First call is for risks
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: mockRisks }),
+          });
+        }
+        // Second call is for controls
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
+      });
+
+      render(
+        <BrowserRouter>
+          <Risks />
+        </BrowserRouter>
+      );
+
+      await waitFor(() => {
+        // Should display control with format: controlId, domain, name
+        expect(screen.getByText(/AST-01, Asset Management, Asset Inventory/)).toBeInTheDocument();
+      });
+    });
+
+    it('should display linked controls in alphabetical order by controlId', async () => {
+      const mockControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'IAC-02',
+          name: 'Access Control Policy',
+          domain: 'Identity & Access Control',
+          description: 'Define access control policy',
+        },
+        {
+          id: 'uuid-2',
+          controlId: 'AST-01',
+          name: 'Asset Inventory',
+          domain: 'Asset Management',
+          description: 'Maintain asset inventory',
+        },
+        {
+          id: 'uuid-3',
+          controlId: 'DCH-03',
+          name: 'Data Classification',
+          domain: 'Data Management',
+          description: 'Classify data assets',
+        },
+      ];
+
+      const mockRisks = [
+        {
+          id: 'risk-1',
+          riskId: 'RISK-001',
+          title: 'Risk with Controls',
+          // linkedControls are in non-alphabetical order
+          linkedControls: ['IAC-02', 'DCH-03', 'AST-01'],
+          inherentLikelihood: 'medium',
+          inherentImpact: 'low',
+        },
+      ];
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        // First call is for risks
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: mockRisks }),
+          });
+        }
+        // Second call is for controls
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
+      });
+
+      const { container } = render(
+        <BrowserRouter>
+          <Risks />
+        </BrowserRouter>
+      );
+
+      await waitFor(() => {
+        // Should display controls in alphabetical order: AST-01, DCH-03, IAC-02
+        const linkedControlsCell = container.querySelector('td:nth-child(4)');
+        const text = linkedControlsCell?.textContent || '';
+        // AST-01 should appear before DCH-03 and IAC-02
+        const astIndex = text.indexOf('AST-01');
+        const dchIndex = text.indexOf('DCH-03');
+        const iacIndex = text.indexOf('IAC-02');
+        expect(astIndex).toBeGreaterThan(-1);
+        expect(dchIndex).toBeGreaterThan(-1);
+        expect(iacIndex).toBeGreaterThan(-1);
+        expect(astIndex).toBeLessThan(dchIndex);
+        expect(dchIndex).toBeLessThan(iacIndex);
       });
     });
 
@@ -463,6 +597,163 @@ describe('Risks Page', () => {
       await waitFor(() => {
         const searchInput = screen.getByPlaceholderText(/Search controls/i);
         expect(searchInput).toBeInTheDocument();
+      });
+    });
+
+    it('should display controls with controlId, name, and domain fields', async () => {
+      const mockControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'AST-01',
+          name: 'Asset Management',
+          domain: 'Asset Management',
+          description: 'Control for managing assets',
+        },
+      ];
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        // First call is for risks
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: [] }),
+          });
+        }
+        // Second call is for controls
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
+      });
+
+      render(
+        <BrowserRouter>
+          <Risks />
+        </BrowserRouter>
+      );
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/Add Risk/i));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/AST-01 - Asset Management/)).toBeInTheDocument();
+      });
+    });
+
+    it('should allow selecting controls by controlId in create modal', async () => {
+      const mockControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'AST-01',
+          name: 'Asset Inventory',
+          domain: 'Asset Management',
+          description: 'Maintain asset inventory',
+        },
+      ];
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        // First call is for risks
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: [] }),
+          });
+        }
+        // Second call is for controls
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
+      });
+
+      render(
+        <BrowserRouter>
+          <Risks />
+        </BrowserRouter>
+      );
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/Add Risk/i));
+      });
+
+      await waitFor(() => {
+        const checkbox = screen.getByRole('checkbox');
+        expect(checkbox).toBeInTheDocument();
+        expect(checkbox).not.toBeChecked();
+      });
+    });
+
+    it('should display controls in alphabetical order in create modal', async () => {
+      const mockControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'IAC-02',
+          name: 'Access Control Policy',
+          domain: 'Identity & Access Control',
+          description: 'Define access control policy',
+        },
+        {
+          id: 'uuid-2',
+          controlId: 'DCH-03',
+          name: 'Data Classification',
+          domain: 'Data Management',
+          description: 'Classify data assets',
+        },
+        {
+          id: 'uuid-3',
+          controlId: 'AST-01',
+          name: 'Asset Inventory',
+          domain: 'Asset Management',
+          description: 'Maintain asset inventory',
+        },
+      ];
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        // First call is for risks
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: [] }),
+          });
+        }
+        // Second call is for controls
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
+      });
+
+      const { container } = render(
+        <BrowserRouter>
+          <Risks />
+        </BrowserRouter>
+      );
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/Add Risk/i));
+      });
+
+      await waitFor(() => {
+        // Find the control list container
+        const controlListContainer = container.querySelector('.max-h-48.overflow-y-auto');
+        expect(controlListContainer).toBeTruthy();
+
+        // Find all control labels within the control list
+        const controlLabels = controlListContainer?.querySelectorAll('.text-sm.font-medium.text-white');
+        const controlTexts = Array.from(controlLabels || []).map(label => label.textContent);
+
+        // Should be in alphabetical order: AST-01, DCH-03, IAC-02
+        expect(controlTexts.length).toBe(3);
+        expect(controlTexts[0]).toContain('AST-01');
+        expect(controlTexts[1]).toContain('DCH-03');
+        expect(controlTexts[2]).toContain('IAC-02');
       });
     });
   });

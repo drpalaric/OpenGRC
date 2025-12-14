@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import RiskDetails from './RiskDetails';
+import RiskDetails from '../pages/RiskDetails';
 
 /**
  * Risk Details Page Tests - TDD Implementation
@@ -33,14 +33,16 @@ const mockRisk = {
 const mockControls = [
   {
     id: 'ctrl-1',
-    requirementId: 'CTRL-001',
-    title: 'Access Control',
+    controlId: 'CTRL-001',
+    name: 'Access Control',
+    domain: 'Identity & Access Control',
     description: 'Implement access controls',
   },
   {
     id: 'ctrl-2',
-    requirementId: 'CTRL-002',
-    title: 'Encryption',
+    controlId: 'CTRL-002',
+    name: 'Encryption',
+    domain: 'Data Protection',
     description: 'Encrypt sensitive data',
   },
 ];
@@ -416,6 +418,59 @@ describe('Risk Details Page', () => {
         expect(screen.getByText('Edit')).toBeInTheDocument();
         expect(screen.queryByText('Save')).not.toBeInTheDocument();
         expect(screen.queryByText('Cancel')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should display linked controls with controlId, name, and domain fields', async () => {
+      const updatedControls = [
+        {
+          id: 'uuid-1',
+          controlId: 'AST-01',
+          name: 'Asset Inventory',
+          domain: 'Asset Management',
+          description: 'Maintain asset inventory',
+        },
+        {
+          id: 'uuid-2',
+          controlId: 'IAC-02',
+          name: 'Access Control Policy',
+          domain: 'Identity & Access Control',
+          description: 'Define access control policy',
+        },
+      ];
+
+      const riskWithNewControls = {
+        ...mockRisk,
+        linkedControls: ['AST-01', 'IAC-02'],
+      };
+
+      let callCount = 0;
+      (global.fetch as any).mockImplementation((url: string) => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: riskWithNewControls }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: updatedControls }),
+        });
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/risks/risk-uuid-123']}>
+          <Routes>
+            <Route path="/risks/:id" element={<RiskDetails />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('AST-01')).toBeInTheDocument();
+        expect(screen.getByText('Asset Inventory')).toBeInTheDocument();
+        expect(screen.getByText('Asset Management')).toBeInTheDocument();
       });
     });
   });

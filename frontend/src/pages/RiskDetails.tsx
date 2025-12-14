@@ -25,8 +25,9 @@ interface Risk {
 // Control interface for linking
 interface Control {
   id: string;
-  requirementId: string;
-  title: string;
+  controlId: string;
+  name: string;
+  domain: string;
   description: string;
 }
 
@@ -40,7 +41,7 @@ const getRiskLevelColor = (level?: string): string => {
     case 'medium':
       return 'bg-amber-500 text-white';
     case 'high':
-      return 'bg-orange-600 text-white';
+      return 'bg-red-600 text-white';
     case 'critical':
       return 'bg-red-900 text-white';
     default:
@@ -133,19 +134,23 @@ export default function RiskDetails() {
   // Get control details by ID
   const getControlDetails = (controlId: string) => {
     if (!Array.isArray(controls)) return undefined;
-    return controls.find(c => c.requirementId === controlId);
+    return controls.find(c => c.controlId === controlId);
   };
 
-  // Filter controls based on search
-  const filteredControls = controls.filter(control => {
-    if (!controlSearch) return true;
-    const searchLower = controlSearch.toLowerCase();
-    return (
-      control.title.toLowerCase().includes(searchLower) ||
-      control.description.toLowerCase().includes(searchLower) ||
-      control.requirementId.toLowerCase().includes(searchLower)
-    );
-  });
+  // Filter controls based on search and sort alphabetically by controlId
+  const filteredControls = Array.isArray(controls)
+    ? controls
+        .filter(control => {
+          if (!controlSearch) return true;
+          const searchLower = controlSearch.toLowerCase();
+          return (
+            control.name.toLowerCase().includes(searchLower) ||
+            control.description.toLowerCase().includes(searchLower) ||
+            control.controlId.toLowerCase().includes(searchLower)
+          );
+        })
+        .sort((a, b) => a.controlId.localeCompare(b.controlId))
+    : [];
 
   if (loading) {
     return (
@@ -484,7 +489,8 @@ export default function RiskDetails() {
                       <div className="text-sm font-medium text-amber-400">{controlId}</div>
                       {control && (
                         <>
-                          <div className="text-sm text-white mt-1">{control.title}</div>
+                          <div className="text-sm text-white mt-1">{control.name}</div>
+                          <div className="text-xs text-gray-500 mt-1">{control.domain}</div>
                           <div className="text-xs text-gray-400 mt-1">{control.description}</div>
                         </>
                       )}
@@ -519,13 +525,13 @@ export default function RiskDetails() {
                     <label className="flex items-start cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={editedRisk.linkedControls?.includes(control.requirementId) || false}
-                        onChange={() => toggleControlLink(control.requirementId)}
+                        checked={editedRisk.linkedControls?.includes(control.controlId) || false}
+                        onChange={() => toggleControlLink(control.controlId)}
                         className="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-700 rounded bg-gray-800"
                       />
                       <div className="ml-3">
                         <div className="text-sm font-medium text-white">
-                          {control.requirementId} - {control.title}
+                          {control.controlId} - {control.name}
                         </div>
                         <div className="text-xs text-gray-400 line-clamp-1">
                           {control.description}

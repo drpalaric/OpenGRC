@@ -242,6 +242,65 @@ describe('Frameworks API (e2e) - Intended Functionality', () => {
       // Should NOT have deletedAt field
       expect(framework).not.toHaveProperty('deletedAt');
     });
+
+    it('should unlink controls when deleting a framework (keep controls, remove association)', async () => {
+      // Create a framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'UNLINK-TEST',
+          name: 'Unlink Controls Test',
+          description: 'Test unlinking controls on framework delete',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create controls associated with the framework
+      const ctrl1Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'REQ-001',
+          title: 'Control 1',
+          description: 'Control that should be unlinked',
+          domain: 'security',
+        });
+      const control1Id = ctrl1Res.body.data.id;
+
+      const ctrl2Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'REQ-002',
+          title: 'Control 2',
+          description: 'Another control that should be unlinked',
+          domain: 'compliance',
+        });
+      const control2Id = ctrl2Res.body.data.id;
+
+      // Delete the framework
+      await request(app.getHttpServer())
+        .delete(`/api/frameworks/${frameworkId}`)
+        .expect(204);
+
+      // Verify framework is deleted
+      await request(app.getHttpServer())
+        .get(`/api/frameworks/${frameworkId}`)
+        .expect(404);
+
+      // Verify controls still exist but are unlinked (frameworkId is null)
+      const control1Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control1Id}`)
+        .expect(200);
+      expect(control1Check.body.data.id).toBe(control1Id);
+      expect(control1Check.body.data.frameworkId).toBeNull();
+
+      const control2Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control2Id}`)
+        .expect(200);
+      expect(control2Check.body.data.id).toBe(control2Id);
+      expect(control2Check.body.data.frameworkId).toBeNull();
+    });
   });
 
   describe('Controls API - Nested Resource', () => {
@@ -667,6 +726,384 @@ describe('Frameworks API (e2e) - Intended Functionality', () => {
           expect(res.body.data).toBeInstanceOf(Array);
           expect(res.body.data.length).toBe(0); // No partial matches
         });
+    });
+  });
+
+  describe('POST /api/frameworks/:id/controls/add-bulk - Bulk Add Controls to Framework', () => {
+    it('should add multiple existing controls to a framework (assign frameworkId)', async () => {
+      // Create a framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'BULK-ADD',
+          name: 'Bulk Add Test',
+          description: 'Test bulk control addition',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create controls without a framework (unlinked)
+      const ctrl1Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: null,
+          requirementId: 'REQ-001',
+          title: 'Unlinked Control 1',
+          description: 'Control to be added',
+          domain: 'security',
+        });
+      const control1Id = ctrl1Res.body.data.id;
+
+      const ctrl2Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: null,
+          requirementId: 'REQ-002',
+          title: 'Unlinked Control 2',
+          description: 'Another control to be added',
+          domain: 'compliance',
+        });
+      const control2Id = ctrl2Res.body.data.id;
+
+      // Bulk add controls to framework
+      await request(app.getHttpServer())
+        .post(`/api/frameworks/${frameworkId}/controls/add-bulk`)
+        .send({
+          controlIds: [control1Id, control2Id],
+        })
+        .expect(200);
+
+      // Verify controls are now assigned to the framework
+      const control1Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control1Id}`)
+        .expect(200);
+      expect(control1Check.body.data.frameworkId).toBe(frameworkId);
+
+      const control2Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control2Id}`)
+        .expect(200);
+      expect(control2Check.body.data.frameworkId).toBe(frameworkId);
+
+      // Verify framework has 2 controls
+      const frameworkControls = await request(app.getHttpServer())
+        .get(`/api/frameworks/${frameworkId}/controls`)
+        .expect(200);
+      expect(frameworkControls.body.data.length).toBe(2);
+    });
+
+    it('should reassign controls from one framework to another', async () => {
+      // Create two frameworks
+      const fw1Res = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'FW1-REASSIGN',
+          name: 'Framework 1',
+          description: 'Original framework',
+          type: 'security',
+        });
+      const framework1Id = fw1Res.body.data.id;
+
+      const fw2Res = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'FW2-REASSIGN',
+          name: 'Framework 2',
+          description: 'Target framework',
+          type: 'compliance',
+        });
+      const framework2Id = fw2Res.body.data.id;
+
+      // Create controls in framework 1
+      const ctrl1Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: framework1Id,
+          requirementId: 'REQ-001',
+          title: 'Control in FW1',
+          description: 'Will be moved to FW2',
+          domain: 'security',
+        });
+      const control1Id = ctrl1Res.body.data.id;
+
+      // Reassign control from framework1 to framework2
+      await request(app.getHttpServer())
+        .post(`/api/frameworks/${framework2Id}/controls/add-bulk`)
+        .send({
+          controlIds: [control1Id],
+        })
+        .expect(200);
+
+      // Verify control is now in framework2
+      const controlCheck = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control1Id}`)
+        .expect(200);
+      expect(controlCheck.body.data.frameworkId).toBe(framework2Id);
+
+      // Verify framework1 has 0 controls
+      const fw1Controls = await request(app.getHttpServer())
+        .get(`/api/frameworks/${framework1Id}/controls`)
+        .expect(200);
+      expect(fw1Controls.body.data.length).toBe(0);
+
+      // Verify framework2 has 1 control
+      const fw2Controls = await request(app.getHttpServer())
+        .get(`/api/frameworks/${framework2Id}/controls`)
+        .expect(200);
+      expect(fw2Controls.body.data.length).toBe(1);
+    });
+
+    it('should return 404 when trying to add controls to non-existent framework', async () => {
+      return request(app.getHttpServer())
+        .post('/api/frameworks/00000000-0000-0000-0000-000000000000/controls/add-bulk')
+        .send({
+          controlIds: ['00000000-0000-0000-0000-000000000001'],
+        })
+        .expect(404);
+    });
+
+    it('should handle empty controlIds array gracefully', async () => {
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'EMPTY-ADD',
+          name: 'Empty Add Test',
+          description: 'Test empty array',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Send empty array
+      return request(app.getHttpServer())
+        .post(`/api/frameworks/${frameworkId}/controls/add-bulk`)
+        .send({
+          controlIds: [],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.addedCount).toBe(0);
+        });
+    });
+
+    it('should update framework progress after adding controls', async () => {
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'PROGRESS-ADD',
+          name: 'Progress Test',
+          description: 'Test progress update',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create an implemented control
+      const ctrlRes = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: null,
+          requirementId: 'REQ-001',
+          title: 'Implemented Control',
+          description: 'This control is implemented',
+          domain: 'security',
+          implementationStatus: 'implemented',
+        });
+      const controlId = ctrlRes.body.data.id;
+
+      // Add control to framework
+      await request(app.getHttpServer())
+        .post(`/api/frameworks/${frameworkId}/controls/add-bulk`)
+        .send({
+          controlIds: [controlId],
+        })
+        .expect(200);
+
+      // Check framework progress
+      const frameworkCheck = await request(app.getHttpServer())
+        .get(`/api/frameworks/${frameworkId}`)
+        .expect(200);
+
+      expect(frameworkCheck.body.data.totalControls).toBe(1);
+      expect(frameworkCheck.body.data.implementedControls).toBe(1);
+      expect(frameworkCheck.body.data.completionPercentage).toBe(100);
+    });
+  });
+
+  describe('POST /api/frameworks/:id/controls/remove-bulk - Bulk Remove Controls from Framework', () => {
+    it('should remove multiple controls from a framework (unlink, not delete)', async () => {
+      // Create a framework
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'BULK-REMOVE',
+          name: 'Bulk Remove Test',
+          description: 'Test bulk control removal',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Create multiple controls
+      const ctrl1Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'REQ-001',
+          title: 'Control 1',
+          description: 'Control to be removed',
+          domain: 'security',
+        });
+      const control1Id = ctrl1Res.body.data.id;
+
+      const ctrl2Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'REQ-002',
+          title: 'Control 2',
+          description: 'Control to be removed',
+          domain: 'compliance',
+        });
+      const control2Id = ctrl2Res.body.data.id;
+
+      const ctrl3Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId,
+          requirementId: 'REQ-003',
+          title: 'Control 3',
+          description: 'Control to stay',
+          domain: 'privacy',
+        });
+      const control3Id = ctrl3Res.body.data.id;
+
+      // Bulk remove controls 1 and 2
+      await request(app.getHttpServer())
+        .post(`/api/frameworks/${frameworkId}/controls/remove-bulk`)
+        .send({
+          controlIds: [control1Id, control2Id],
+        })
+        .expect(200);
+
+      // Verify controls 1 and 2 are unlinked (frameworkId is null)
+      const control1Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control1Id}`)
+        .expect(200);
+      expect(control1Check.body.data.frameworkId).toBeNull();
+
+      const control2Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control2Id}`)
+        .expect(200);
+      expect(control2Check.body.data.frameworkId).toBeNull();
+
+      // Verify control 3 is still linked
+      const control3Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control3Id}`)
+        .expect(200);
+      expect(control3Check.body.data.frameworkId).toBe(frameworkId);
+
+      // Verify framework only has 1 control remaining
+      const frameworkControls = await request(app.getHttpServer())
+        .get(`/api/frameworks/${frameworkId}/controls`)
+        .expect(200);
+      expect(frameworkControls.body.data.length).toBe(1);
+      expect(frameworkControls.body.data[0].id).toBe(control3Id);
+    });
+
+    it('should return 404 when trying to remove controls from non-existent framework', async () => {
+      return request(app.getHttpServer())
+        .post('/api/frameworks/00000000-0000-0000-0000-000000000000/controls/remove-bulk')
+        .send({
+          controlIds: ['00000000-0000-0000-0000-000000000001'],
+        })
+        .expect(404);
+    });
+
+    it('should handle empty controlIds array gracefully', async () => {
+      const fwRes = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'EMPTY-BULK',
+          name: 'Empty Bulk Test',
+          description: 'Test empty array',
+          type: 'security',
+        });
+      const frameworkId = fwRes.body.data.id;
+
+      // Send empty array
+      return request(app.getHttpServer())
+        .post(`/api/frameworks/${frameworkId}/controls/remove-bulk`)
+        .send({
+          controlIds: [],
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.removedCount).toBe(0);
+        });
+    });
+
+    it('should only remove controls that belong to the specified framework', async () => {
+      // Create two frameworks
+      const fw1Res = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'FW1-BULK',
+          name: 'Framework 1',
+          description: 'First framework',
+          type: 'security',
+        });
+      const framework1Id = fw1Res.body.data.id;
+
+      const fw2Res = await request(app.getHttpServer())
+        .post('/api/frameworks')
+        .send({
+          code: 'FW2-BULK',
+          name: 'Framework 2',
+          description: 'Second framework',
+          type: 'compliance',
+        });
+      const framework2Id = fw2Res.body.data.id;
+
+      // Create controls for framework 1
+      const ctrl1Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: framework1Id,
+          requirementId: 'REQ-001',
+          title: 'FW1 Control',
+          description: 'Control for framework 1',
+          domain: 'security',
+        });
+      const control1Id = ctrl1Res.body.data.id;
+
+      // Create control for framework 2
+      const ctrl2Res = await request(app.getHttpServer())
+        .post('/api/frameworks/controls')
+        .send({
+          frameworkId: framework2Id,
+          requirementId: 'REQ-002',
+          title: 'FW2 Control',
+          description: 'Control for framework 2',
+          domain: 'compliance',
+        });
+      const control2Id = ctrl2Res.body.data.id;
+
+      // Try to remove both controls from framework 1 (only control1 should be removed)
+      await request(app.getHttpServer())
+        .post(`/api/frameworks/${framework1Id}/controls/remove-bulk`)
+        .send({
+          controlIds: [control1Id, control2Id],
+        })
+        .expect(200);
+
+      // Verify control1 is unlinked
+      const control1Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control1Id}`)
+        .expect(200);
+      expect(control1Check.body.data.frameworkId).toBeNull();
+
+      // Verify control2 is still linked to framework 2
+      const control2Check = await request(app.getHttpServer())
+        .get(`/api/frameworks/controls/${control2Id}`)
+        .expect(200);
+      expect(control2Check.body.data.frameworkId).toBe(framework2Id);
     });
   });
 });

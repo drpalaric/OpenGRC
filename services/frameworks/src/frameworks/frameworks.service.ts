@@ -146,8 +146,23 @@ export class FrameworksService {
     return this.frameworkRepository.save(framework);
   }
 
+  /**
+   * Delete a framework
+   * Controls associated with the framework are unlinked (frameworkId set to null), not deleted
+   */
   async remove(id: string): Promise<void> {
     const framework = await this.findOne(id);
+
+    // Unlink all controls from this framework (set frameworkId to null)
+    // This prevents cascade deletion and keeps controls in the system
+    await this.frameworkControlRepository
+      .createQueryBuilder()
+      .update(FrameworkControl)
+      .set({ frameworkId: null })
+      .where('frameworkId = :frameworkId', { frameworkId: id })
+      .execute();
+
+    // Now delete the framework
     await this.frameworkRepository.remove(framework);
   }
 
@@ -370,5 +385,92 @@ async addControl(
     await this.updateFrameworkProgress(frameworkId);
 
     return saved;
+  }
+
+  /**
+   * Bulk add existing controls to a framework
+   * Controls are reassigned (frameworkId updated) to the target framework
+   * Can be used to move controls between frameworks or assign unlinked controls
+   */
+  async bulkAddControlsToFramework(
+    frameworkId: string,
+    controlIds: string[],
+  ): Promise<{ addedCount: number }> {
+    // Verify framework exists
+    await this.findOne(frameworkId);
+
+    // If empty array, return early
+    if (!controlIds || controlIds.length === 0) {
+      return { addedCount: 0 };
+    }
+
+    // Get the controls and their old framework IDs for progress updates
+    const controls = await this.frameworkControlRepository
+      .createQueryBuilder('control')
+      .where('control.id IN (:...controlIds)', { controlIds })
+      .getMany();
+
+    // Collect unique old framework IDs for progress updates
+    const oldFrameworkIds = new Set<string>();
+    controls.forEach(control => {
+      if (control.frameworkId) {
+        oldFrameworkIds.add(control.frameworkId);
+      }
+    });
+
+    // Assign controls to the new framework
+    const result = await this.frameworkControlRepository
+      .createQueryBuilder()
+      .update(FrameworkControl)
+      .set({ frameworkId })
+      .where('id IN (:...controlIds)', { controlIds })
+      .execute();
+
+    // Update progress for the target framework
+    await this.updateFrameworkProgress(frameworkId);
+
+    // Update progress for old frameworks (if controls were moved)
+    for (const oldFrameworkId of oldFrameworkIds) {
+      try {
+        await this.updateFrameworkProgress(oldFrameworkId);
+      } catch (error) {
+        // Framework might have been deleted, ignore
+      }
+    }
+
+    return { addedCount: result.affected || 0 };
+  }
+
+  /**
+   * Bulk remove controls from a framework
+   * Controls are unlinked (frameworkId set to null), not deleted
+   * Only controls that belong to the specified framework are affected
+   */
+  async bulkRemoveControlsFromFramework(
+    frameworkId: string,
+    controlIds: string[],
+  ): Promise<{ removedCount: number }> {
+    // Verify framework exists
+    await this.findOne(frameworkId);
+
+    // If empty array, return early
+    if (!controlIds || controlIds.length === 0) {
+      return { removedCount: 0 };
+    }
+
+    // Unlink controls that belong to this framework
+    // Only update controls where frameworkId matches (security: prevent cross-framework manipulation)
+    const result = await this.frameworkControlRepository
+      .createQueryBuilder()
+      .update(FrameworkControl)
+      .set({ frameworkId: null })
+      .where('id IN (:...controlIds)', { controlIds })
+      .andWhere('frameworkId = :frameworkId', { frameworkId })
+      .execute();
+
+    // Update framework progress after removing controls
+    await this.updateFrameworkProgress(frameworkId);
+
+    return { removedCount: result.affected || 0 };
   }
 }

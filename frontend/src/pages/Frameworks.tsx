@@ -17,6 +17,7 @@ interface Framework {
 
 interface FrameworkControl {
   id: string;
+  frameworkId?: string | null;
   requirementId: string;
   title: string;
   description: string;
@@ -61,6 +62,16 @@ export default function Frameworks() {
     rationale: ''
   });
   const [saving, setSaving] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [frameworkToDelete, setFrameworkToDelete] = useState<Framework | null>(null);
+  const [selectedControlIds, setSelectedControlIds] = useState<Set<string>>(new Set());
+  const [isRemovingControls, setIsRemovingControls] = useState(false);
+  const [isAddExistingControlsOpen, setIsAddExistingControlsOpen] = useState(false);
+  const [availableControls, setAvailableControls] = useState<FrameworkControl[]>([]);
+  const [controlsToAdd, setControlsToAdd] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [domainFilter, setDomainFilter] = useState<string>('');
+  const [isAddingControls, setIsAddingControls] = useState(false);
 
   useEffect(() => {
     fetchFrameworks();
@@ -200,6 +211,227 @@ export default function Frameworks() {
     }
   };
 
+  /**
+   * Delete a framework with confirmation
+   * Controls are unlinked (not deleted) when framework is removed
+   */
+  const confirmDeleteFramework = (framework: Framework) => {
+    setFrameworkToDelete(framework);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const deleteFramework = async () => {
+    if (!frameworkToDelete) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(`http://localhost:3002/api/frameworks/${frameworkToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        // Clear selection if deleted framework was selected
+        if (selectedFramework?.id === frameworkToDelete.id) {
+          setSelectedFramework(null);
+          setControls([]);
+        }
+        await fetchFrameworks();
+        setIsDeleteDialogOpen(false);
+        setFrameworkToDelete(null);
+      } else {
+        console.error('Failed to delete framework');
+      }
+    } catch (error) {
+      console.error('Error deleting framework:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Bulk remove selected controls from the current framework
+   * Controls are unlinked (frameworkId set to null), not deleted
+   */
+  const bulkRemoveControls = async () => {
+    if (!selectedFramework || selectedControlIds.size === 0) return;
+
+    setIsRemovingControls(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3002/api/frameworks/${selectedFramework.id}/controls/remove-bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            controlIds: Array.from(selectedControlIds)
+          })
+        }
+      );
+
+      if (response.ok) {
+        // Refresh controls and frameworks to update counts
+        await fetchControls(selectedFramework.id);
+        await fetchFrameworks();
+        setSelectedControlIds(new Set());
+      } else {
+        console.error('Failed to remove controls');
+      }
+    } catch (error) {
+      console.error('Error removing controls:', error);
+    } finally {
+      setIsRemovingControls(false);
+    }
+  };
+
+  /**
+   * Toggle control selection for bulk operations
+   */
+  const toggleControlSelection = (controlId: string) => {
+    setSelectedControlIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(controlId)) {
+        newSet.delete(controlId);
+      } else {
+        newSet.add(controlId);
+      }
+      return newSet;
+    });
+  };
+
+  /**
+   * Select or deselect all controls
+   */
+  const toggleAllControls = () => {
+    if (selectedControlIds.size === controls.length) {
+      setSelectedControlIds(new Set());
+    } else {
+      setSelectedControlIds(new Set(controls.map(c => c.id)));
+    }
+  };
+
+  /**
+   * Fetch all available controls (unlinked + from other frameworks)
+   */
+  const fetchAvailableControls = async () => {
+    try {
+      const response = await fetch('http://localhost:3002/api/frameworks/controls');
+      const result = await response.json();
+      // API returns { data: [...] }
+      const allControls = result.data || result;
+      // Filter out controls already in current framework
+      const filtered = allControls.filter((c: FrameworkControl) =>
+        !selectedFramework || c.frameworkId !== selectedFramework.id
+      );
+      setAvailableControls(filtered);
+    } catch (error) {
+      console.error('Error fetching available controls:', error);
+    }
+  };
+
+  /**
+   * Open the add existing controls modal
+   */
+  const openAddExistingControls = async () => {
+    await fetchAvailableControls();
+    setIsAddExistingControlsOpen(true);
+    setControlsToAdd(new Set());
+    setSearchQuery('');
+    setDomainFilter('');
+  };
+
+  /**
+   * Toggle control selection in add modal
+   */
+  const toggleControlToAdd = (controlId: string) => {
+    setControlsToAdd(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(controlId)) {
+        newSet.delete(controlId);
+      } else {
+        newSet.add(controlId);
+      }
+      return newSet;
+    });
+  };
+
+  /**
+   * Select or deselect all filtered controls
+   */
+  const toggleAllControlsToAdd = () => {
+    const filtered = getFilteredAvailableControls();
+    if (controlsToAdd.size === filtered.length && filtered.length > 0) {
+      setControlsToAdd(new Set());
+    } else {
+      setControlsToAdd(new Set(filtered.map(c => c.id)));
+    }
+  };
+
+  /**
+   * Filter available controls by search and domain
+   */
+  const getFilteredAvailableControls = () => {
+    return availableControls.filter(control => {
+      // Search filter
+      const matchesSearch = !searchQuery ||
+        control.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        control.requirementId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (control.description && control.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      // Domain filter
+      const matchesDomain = !domainFilter || control.domain === domainFilter;
+
+      return matchesSearch && matchesDomain;
+    });
+  };
+
+  /**
+   * Get unique domains from available controls
+   */
+  const getUniqueDomains = () => {
+    const domains = new Set<string>();
+    availableControls.forEach(control => {
+      if (control.domain) {
+        domains.add(control.domain);
+      }
+    });
+    return Array.from(domains).sort();
+  };
+
+  /**
+   * Bulk add selected controls to the current framework
+   */
+  const bulkAddControls = async () => {
+    if (!selectedFramework || controlsToAdd.size === 0) return;
+
+    setIsAddingControls(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3002/api/frameworks/${selectedFramework.id}/controls/add-bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            controlIds: Array.from(controlsToAdd)
+          })
+        }
+      );
+
+      if (response.ok) {
+        // Refresh controls and frameworks to update counts
+        await fetchControls(selectedFramework.id);
+        await fetchFrameworks();
+        setIsAddExistingControlsOpen(false);
+        setControlsToAdd(new Set());
+      } else {
+        console.error('Failed to add controls');
+      }
+    } catch (error) {
+      console.error('Error adding controls:', error);
+    } finally {
+      setIsAddingControls(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="px-4 py-6 sm:px-0">
@@ -249,15 +481,17 @@ export default function Frameworks() {
                 </div>
               ) : (
                 frameworks.map((framework) => (
-                  <button
+                  <div
                     key={framework.id}
-                    onClick={() => selectFramework(framework)}
-                    className={`w-full text-left px-4 py-4 hover:bg-gray-800 transition-colors ${
+                    className={`px-4 py-4 hover:bg-gray-800 transition-colors ${
                       selectedFramework?.id === framework.id ? 'bg-gray-800' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => selectFramework(framework)}
+                        className="flex-1 min-w-0 text-left"
+                      >
                         <p className="text-sm font-medium text-white truncate">
                           {framework.code}
                         </p>
@@ -272,8 +506,8 @@ export default function Frameworks() {
                             {framework.totalControls} controls
                           </span>
                         </div>
-                      </div>
-                      <div className="ml-2 flex-shrink-0">
+                      </button>
+                      <div className="ml-2 flex-shrink-0 flex flex-col items-end space-y-2">
                         <div className="text-right">
                           <div className="text-sm font-semibold text-green-400">
                             {framework.completionPercentage}%
@@ -282,9 +516,21 @@ export default function Frameworks() {
                             {framework.implementedControls}/{framework.totalControls}
                           </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDeleteFramework(framework);
+                          }}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-red-400 hover:text-red-300 hover:bg-red-900 hover:bg-opacity-20"
+                          title="Delete framework"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
@@ -303,11 +549,19 @@ export default function Frameworks() {
                       <h2 className="text-xl font-bold text-white">{selectedFramework.name}</h2>
                       <p className="mt-1 text-sm text-gray-400">{selectedFramework.code}</p>
                     </div>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                      selectedFramework.status === 'active' ? 'bg-green-900 text-green-200' : 'bg-gray-800 text-gray-300'
-                    }`}>
-                      {selectedFramework.status}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        selectedFramework.status === 'active' ? 'bg-green-900 text-green-200' : 'bg-gray-800 text-gray-300'
+                      }`}>
+                        {selectedFramework.status}
+                      </span>
+                      <button
+                        onClick={() => confirmDeleteFramework(selectedFramework)}
+                        className="inline-flex items-center px-3 py-1.5 border border-red-700 text-sm font-medium rounded-md text-red-300 bg-red-900 bg-opacity-20 hover:bg-opacity-30"
+                      >
+                        Delete Framework
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="px-6 py-4">
@@ -344,15 +598,48 @@ export default function Frameworks() {
               {/* Controls List */}
               <div className="bg-black border border-gray-800 rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-white">
-                    Controls ({controls.length})
-                  </h3>
-                  <button
-                    onClick={() => setIsCreatingControl(true)}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    + Add Control
-                  </button>
+                  <div className="flex items-center space-x-4">
+                    <h3 className="text-lg font-medium text-white">
+                      Controls ({controls.length})
+                    </h3>
+                    {controls.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="selectAll"
+                          checked={selectedControlIds.size === controls.length && controls.length > 0}
+                          onChange={toggleAllControls}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-700 rounded bg-gray-800"
+                        />
+                        <label htmlFor="selectAll" className="text-sm text-gray-400">
+                          Select All
+                        </label>
+                      </div>
+                    )}
+                    {selectedControlIds.size > 0 && (
+                      <button
+                        onClick={bulkRemoveControls}
+                        disabled={isRemovingControls}
+                        className="inline-flex items-center px-3 py-1.5 border border-red-700 text-sm font-medium rounded-md text-red-300 bg-red-900 bg-opacity-20 hover:bg-opacity-30 disabled:opacity-50"
+                      >
+                        {isRemovingControls ? 'Removing...' : `Remove ${selectedControlIds.size} Selected`}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={openAddExistingControls}
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-700 text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700"
+                    >
+                      + Add Existing
+                    </button>
+                    <button
+                      onClick={() => setIsCreatingControl(true)}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      + Create New
+                    </button>
+                  </div>
                 </div>
                 <div className="divide-y divide-gray-800">
                   {controls.length === 0 ? (
@@ -362,7 +649,16 @@ export default function Frameworks() {
                   ) : (
                     controls.map((control) => (
                       <div key={control.id} className="px-6 py-4 hover:bg-gray-800 transition-colors">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex items-center pt-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedControlIds.has(control.id)}
+                              onChange={() => toggleControlSelection(control.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-700 rounded bg-gray-800"
+                            />
+                          </div>
                           <div
                             className="flex-1 cursor-pointer"
                             onClick={() => navigate(`/frameworks/controls/${control.id}`)}
@@ -895,6 +1191,205 @@ export default function Frameworks() {
               >
                 {saving ? 'Creating...' : 'Create Framework'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Framework Confirmation Modal */}
+      {isDeleteDialogOpen && frameworkToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-800">
+              <h3 className="text-lg font-medium text-white">Delete Framework</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-300 mb-4">
+                Are you sure you want to delete the framework <strong className="text-white">"{frameworkToDelete.name}"</strong>?
+              </p>
+              <div className="bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded-md p-3 mb-4">
+                <div className="flex">
+                  <svg className="h-5 w-5 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-200">
+                      <strong>Note:</strong> Controls will not be deleted. They will be unlinked from this framework and remain in the system.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                This action cannot be undone. The framework will be permanently deleted.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setFrameworkToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-700 text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteFramework}
+                className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                disabled={saving}
+              >
+                {saving ? 'Deleting...' : 'Delete Framework'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Existing Controls Modal */}
+      {isAddExistingControlsOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-black border border-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-800">
+              <h3 className="text-lg font-medium text-white">Add Existing Controls</h3>
+              <p className="mt-1 text-sm text-gray-400">
+                Select controls to add to {selectedFramework?.name}
+              </p>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="px-6 py-4 border-b border-gray-800 space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by title, ID, or description..."
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm"
+                  />
+                </div>
+                <div className="w-48">
+                  <select
+                    value={domainFilter}
+                    onChange={(e) => setDomainFilter(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm"
+                  >
+                    <option value="">All Domains</option>
+                    {getUniqueDomains().map(domain => (
+                      <option key={domain} value={domain}>{domain}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="selectAllAvailable"
+                    checked={controlsToAdd.size === getFilteredAvailableControls().length && getFilteredAvailableControls().length > 0}
+                    onChange={toggleAllControlsToAdd}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-700 rounded bg-gray-800"
+                  />
+                  <label htmlFor="selectAllAvailable" className="text-sm text-gray-400">
+                    Select All ({getFilteredAvailableControls().length} controls)
+                  </label>
+                </div>
+                {controlsToAdd.size > 0 && (
+                  <span className="text-sm text-indigo-400">
+                    {controlsToAdd.size} selected
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Controls List */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {getFilteredAvailableControls().length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-400">No controls found</p>
+                  {(searchQuery || domainFilter) && (
+                    <p className="mt-1 text-xs text-gray-500">Try adjusting your filters</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {getFilteredAvailableControls().map((control) => (
+                    <div
+                      key={control.id}
+                      className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                        controlsToAdd.has(control.id)
+                          ? 'border-indigo-600 bg-indigo-900 bg-opacity-20'
+                          : 'border-gray-700 bg-gray-800 bg-opacity-50 hover:bg-gray-800'
+                      }`}
+                      onClick={() => toggleControlToAdd(control.id)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex items-center pt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={controlsToAdd.has(control.id)}
+                            onChange={() => {}}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-700 rounded bg-gray-800"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-mono font-medium text-indigo-400">
+                              {control.requirementId}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(control.priority)}`}>
+                              {control.priority}
+                            </span>
+                            {control.domain && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-900 text-purple-200">
+                                {control.domain}
+                              </span>
+                            )}
+                            {control.frameworkId && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900 text-amber-200">
+                                Other Framework
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="mt-1 text-sm font-medium text-white">{control.title}</h4>
+                          <p className="mt-1 text-xs text-gray-400 line-clamp-2">{control.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                {availableControls.length} total controls available
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    setIsAddExistingControlsOpen(false);
+                    setControlsToAdd(new Set());
+                  }}
+                  className="px-4 py-2 border border-gray-700 text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700"
+                  disabled={isAddingControls}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={bulkAddControls}
+                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                  disabled={isAddingControls || controlsToAdd.size === 0}
+                >
+                  {isAddingControls ? 'Adding...' : `Add ${controlsToAdd.size} Control${controlsToAdd.size !== 1 ? 's' : ''}`}
+                </button>
+              </div>
             </div>
           </div>
         </div>

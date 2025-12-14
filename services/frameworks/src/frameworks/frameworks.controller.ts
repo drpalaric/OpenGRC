@@ -165,6 +165,42 @@ export class FrameworksController {
     return this.frameworksService.findControls(frameworkId, domain);
   }
 
+  @Post(':id/controls/add-bulk')
+  @ApiOperation({ summary: 'Bulk add existing controls to a framework (reassign)' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Controls added to framework successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Framework not found' })
+  bulkAddControls(
+    @Param('id', ParseUUIDPipe) frameworkId: string,
+    @Body() body: { controlIds: string[] },
+  ) {
+    return this.frameworksService.bulkAddControlsToFramework(
+      frameworkId,
+      body.controlIds,
+    );
+  }
+
+  @Post(':id/controls/remove-bulk')
+  @ApiOperation({ summary: 'Bulk remove controls from a framework (unlink, not delete)' })
+  @ApiParam({ name: 'id', description: 'Framework ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Controls removed from framework successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Framework not found' })
+  bulkRemoveControls(
+    @Param('id', ParseUUIDPipe) frameworkId: string,
+    @Body() body: { controlIds: string[] },
+  ) {
+    return this.frameworksService.bulkRemoveControlsFromFramework(
+      frameworkId,
+      body.controlIds,
+    );
+  }
+
   // Progress tracking
   @Post(':id/progress/update')
   @ApiOperation({ summary: 'Update framework progress metrics' })

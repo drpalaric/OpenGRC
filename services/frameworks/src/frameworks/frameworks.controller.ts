@@ -60,6 +60,10 @@ export class FrameworksController {
     return this.frameworksService.findByCode(code);
   }
 
+  // Framework Controls CRUD routes replaced by SCF Controls module (/api/frameworks/controls)
+  // Keeping only framework-specific control routes below (/:id/controls/*)
+
+  /*
   @Get('controls')
   @ApiOperation({ summary: 'Get all controls' })
   @ApiResponse({
@@ -108,14 +112,13 @@ export class FrameworksController {
     return this.frameworksService.updateControl(id, updateControlDto);
   }
 
-  @Delete('controls/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete framework control' })
   @ApiParam({ name: 'id', description: 'Control ID' })
   @ApiResponse({ status: 204, description: 'Control deleted successfully' })
   removeControl(@Param('id') id: string) {
     return this.frameworksService.removeControl(id);
   }
+  */
 
   // Framework-specific routes with :id parameter
   @Get(':id')

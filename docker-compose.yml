@@ -6,9 +6,9 @@ volumes:
   postgres-data:
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database with pgvector
   postgres:
-    image: postgres:18.1
+    image: pgvector/pgvector:pg18
     container_name: grc-postgres
     environment:
       POSTGRES_USER: grcadmin

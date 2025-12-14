@@ -18,6 +18,7 @@ interface Framework {
 interface FrameworkControl {
   id: string;
   frameworkId?: string | null;
+  externalControlId?: string; // UUID reference to master control
   requirementId: string;
   title: string;
   description: string;
@@ -661,7 +662,7 @@ export default function Frameworks() {
                           </div>
                           <div
                             className="flex-1 cursor-pointer"
-                            onClick={() => navigate(`/frameworks/controls/${control.id}`)}
+                            onClick={() => control.externalControlId && navigate(`/controls/${control.externalControlId}`)}
                           >
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-mono font-medium text-indigo-400">

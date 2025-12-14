@@ -48,6 +48,8 @@ export default function Controls() {
     rationale: ''
   });
   const [saving, setSaving] = useState(false);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     fetchData();
@@ -110,25 +112,6 @@ export default function Controls() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-amber-900 text-amber-200';
-      case 'high': return 'bg-orange-900 text-orange-200';
-      case 'medium': return 'bg-yellow-900 text-yellow-200';
-      case 'low': return 'bg-green-900 text-green-200';
-      default: return 'bg-gray-800 text-gray-300';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'implemented': return 'bg-green-900 text-green-200';
-      case 'partially_implemented': return 'bg-yellow-900 text-yellow-200';
-      case 'not_implemented': return 'bg-gray-800 text-gray-300';
-      default: return 'bg-gray-800 text-gray-300';
-    }
-  };
-
   // Filter controls
   const filteredControls = allControls.filter(control => {
     if (filterFramework && filterFramework === 'unassigned') {
@@ -158,11 +141,42 @@ export default function Controls() {
   // Get unique domains for filter
   const uniqueDomains = Array.from(new Set(allControls.map(c => c.domain))).filter(Boolean);
 
-  // Get framework name by ID
-  const getFrameworkName = (frameworkId?: string | null) => {
-    if (!frameworkId) return 'Unassigned';
-    const fw = frameworks.find(f => f.id === frameworkId);
-    return fw ? fw.code : frameworkId;
+  // Handle column sorting
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort controls
+  const sortedControls = [...filteredControls].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue: any = a[sortField as keyof FrameworkControl];
+    let bValue: any = b[sortField as keyof FrameworkControl];
+
+    // Handle null/undefined values
+    if (aValue === null || aValue === undefined) return 1;
+    if (bValue === null || bValue === undefined) return -1;
+
+    // String comparison
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortDirection === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    // Number/other comparison
+    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+  });
+
+  // Render sort indicator
+  const renderSortIcon = (field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? ' ▲' : ' ▼';
   };
 
   if (loading) {
@@ -174,7 +188,7 @@ export default function Controls() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-0">
+    <div className="px-4 py-6 sm:px-0 bg-black min-h-screen">
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white">Controls Management</h1>
@@ -279,65 +293,67 @@ export default function Controls() {
         )}
       </div>
 
-      {/* Controls List */}
-      <div className="bg-black border border-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h3 className="text-lg font-medium text-white">
-            Controls ({filteredControls.length})
-          </h3>
-        </div>
-        <div className="divide-y divide-gray-800">
-          {filteredControls.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">
-              No controls found
-            </div>
-          ) : (
-            filteredControls.map((control) => (
-              <div
-                key={control.id}
-                onClick={() => navigate(`/controls/${control.id}`)}
-                className="px-6 py-4 hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-mono font-medium text-indigo-400">
-                        {control.requirementId}
-                      </span>
-                      <span className="text-xs text-gray-500">•</span>
-                      <span className="text-xs text-gray-500">
-                        {getFrameworkName(control.frameworkId)}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(control.priority)}`}>
-                        {control.priority}
-                      </span>
-                      {control.requiresEvidence && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-200">
-                          Evidence Required
-                        </span>
-                      )}
-                    </div>
-                    <h4 className="mt-2 text-sm font-medium text-white">{control.title}</h4>
-                    <p className="mt-1 text-sm text-gray-400 line-clamp-2">{control.description}</p>
-                    <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
-                      <span>{control.category}</span>
-                      {control.domain && (
-                        <>
-                          <span>•</span>
-                          <span>{control.domain}</span>
-                        </>
-                      )}
-                      <span>•</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded ${getStatusColor(control.implementationStatus)}`}>
-                        {control.implementationStatus.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      {/* Controls Table */}
+      <div className="bg-black border border-gray-800 rounded-lg shadow overflow-hidden">
+        {sortedControls.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500">
+            No controls found
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-800">
+              <thead className="bg-gray-900">
+                <tr>
+                  <th
+                    onClick={() => handleSort('requirementId')}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-amber-400"
+                  >
+                    Control ID{renderSortIcon('requirementId')}
+                  </th>
+                  <th
+                    onClick={() => handleSort('title')}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-amber-400"
+                  >
+                    Name{renderSortIcon('title')}
+                  </th>
+                  <th
+                    onClick={() => handleSort('domain')}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-amber-400"
+                  >
+                    Domain{renderSortIcon('domain')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-black divide-y divide-gray-800">
+                {sortedControls.map((control) => (
+                  <tr
+                    key={control.id}
+                    onClick={() => navigate(`/controls/${control.id}`)}
+                    className="hover:bg-gray-900 cursor-pointer"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-amber-400">
+                      {control.requirementId}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white">
+                      {control.title}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                      {control.domain || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-400">
+                      <div className="line-clamp-2">
+                        {control.description}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Create Control Modal */}

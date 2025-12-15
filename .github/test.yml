@@ -1,0 +1,30 @@
+name: Test Project
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Run backend unit tests
+        run: npm run test --workspace services/frameworks
+      - name: Run frontend unit tests
+        run: npm run test:run --workspace frontend
+      - name: Build workspaces
+        run: npm run build --workspaces
+      - name: Run end-to-end tests
+        run: npm run test:e2e

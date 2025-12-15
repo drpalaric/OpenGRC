@@ -131,10 +131,10 @@ export default function RiskDetails() {
     }
   };
 
-  // Get control details by ID
+  // Get control details by UUID (linkedControls now stores UUIDs)
   const getControlDetails = (controlId: string) => {
     if (!Array.isArray(controls)) return undefined;
-    return controls.find(c => c.controlId === controlId);
+    return controls.find(c => c.id === controlId); // Look up by UUID, not business controlId
   };
 
   // Filter controls based on search and sort alphabetically by controlId
@@ -486,7 +486,7 @@ export default function RiskDetails() {
                       onClick={() => control && navigate(`/controls/${control.id}`)}
                       className="bg-gray-900 rounded-md px-4 py-2 border border-gray-800 cursor-pointer hover:bg-gray-800 hover:border-amber-600 transition-colors"
                     >
-                      <div className="text-sm font-medium text-amber-400">{controlId}</div>
+                      <div className="text-sm font-medium text-amber-400">{control ? control.controlId : controlId}</div>
                       {control && (
                         <>
                           <div className="text-sm text-white mt-1">{control.name}</div>
@@ -525,8 +525,8 @@ export default function RiskDetails() {
                     <label className="flex items-start cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={editedRisk.linkedControls?.includes(control.controlId) || false}
-                        onChange={() => toggleControlLink(control.controlId)}
+                        checked={editedRisk.linkedControls?.includes(control.id) || false}
+                        onChange={() => toggleControlLink(control.id)}
                         className="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-700 rounded bg-gray-800"
                       />
                       <div className="ml-3">

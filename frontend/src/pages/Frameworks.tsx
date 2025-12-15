@@ -19,6 +19,7 @@ interface FrameworkControl {
   id: string;
   frameworkId?: string | null;
   externalControlId?: string; // UUID reference to master control
+  controlId?: string;
   requirementId: string;
   title: string;
   description: string;
@@ -376,6 +377,7 @@ export default function Frameworks() {
       const matchesSearch = !searchQuery ||
         control.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         control.requirementId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (control.controlId && control.controlId.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (control.description && control.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Domain filter
@@ -1339,10 +1341,15 @@ export default function Frameworks() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                             <span className="text-sm font-mono font-medium text-indigo-400">
                               {control.requirementId}
                             </span>
+                            {control.controlId && (
+                              <span className="text-xs font-mono text-gray-500">
+                                {control.controlId}
+                              </span>
+                            )}
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(control.priority)}`}>
                               {control.priority}
                             </span>
@@ -1357,6 +1364,11 @@ export default function Frameworks() {
                               </span>
                             )}
                           </div>
+                          {!control.controlId && (
+                            <div className="mt-1 text-xs font-mono text-gray-500">
+                              Internal ID: {control.id}
+                            </div>
+                          )}
                           <h4 className="mt-1 text-sm font-medium text-white">{control.title}</h4>
                           <p className="mt-1 text-xs text-gray-400 line-clamp-2">{control.description}</p>
                         </div>

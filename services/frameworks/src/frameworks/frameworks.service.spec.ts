@@ -32,6 +32,10 @@ describe('FrameworksService - Intended Functionality Only', () => {
   };
 
   const mockControlQueryBuilder = {
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({}),
     getMany: jest.fn(),
   };
 

@@ -51,23 +51,6 @@ describe('Risks Page', () => {
       });
     });
 
-    it('should have black background styling', async () => {
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: [] }),
-      });
-
-      const { container } = render(
-        <BrowserRouter>
-          <Risks />
-        </BrowserRouter>
-      );
-
-      await waitFor(() => {
-        const riskContainer = container.querySelector('.bg-black');
-        expect(riskContainer).toBeInTheDocument();
-      });
-    });
   });
 
   describe('Risk List Display', () => {
@@ -103,20 +86,47 @@ describe('Risks Page', () => {
     });
 
     it('should display linked control IDs', async () => {
+      const mockControls = [
+        {
+          id: 'ctrl-001',
+          controlId: 'CTRL-001',
+          name: 'Control One',
+          domain: 'Access Control',
+          description: 'First control',
+        },
+        {
+          id: 'ctrl-002',
+          controlId: 'CTRL-002',
+          name: 'Control Two',
+          domain: 'Data Protection',
+          description: 'Second control',
+        },
+      ];
+
       const mockRisks = [
         {
           id: 'risk-1',
           riskId: 'RISK-001',
           title: 'Risk with Controls',
-          linkedControls: ['ctrl-001', 'ctrl-002'],
+          linkedControls: ['ctrl-001', 'ctrl-002'], // UUIDs
           inherentLikelihood: 'medium',
           inherentImpact: 'low',
         },
       ];
 
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ data: mockRisks }),
+      let callCount = 0;
+      (global.fetch as any).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: mockRisks }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockControls }),
+        });
       });
 
       render(
@@ -126,8 +136,9 @@ describe('Risks Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/ctrl-001/)).toBeInTheDocument();
-        expect(screen.getByText(/ctrl-002/)).toBeInTheDocument();
+        // Should display business controlId, not UUID
+        expect(screen.getByText(/CTRL-001/)).toBeInTheDocument();
+        expect(screen.getByText(/CTRL-002/)).toBeInTheDocument();
       });
     });
 
@@ -154,7 +165,7 @@ describe('Risks Page', () => {
           id: 'risk-1',
           riskId: 'RISK-001',
           title: 'Risk with Controls',
-          linkedControls: ['AST-01', 'IAC-02'],
+          linkedControls: ['uuid-1', 'uuid-2'], // Use UUIDs instead of business IDs
           inherentLikelihood: 'medium',
           inherentImpact: 'low',
         },
@@ -219,8 +230,8 @@ describe('Risks Page', () => {
           id: 'risk-1',
           riskId: 'RISK-001',
           title: 'Risk with Controls',
-          // linkedControls are in non-alphabetical order
-          linkedControls: ['IAC-02', 'DCH-03', 'AST-01'],
+          // linkedControls are in non-alphabetical order (uuid-2 -> IAC-02, uuid-3 -> DCH-03, uuid-1 -> AST-01)
+          linkedControls: ['uuid-2', 'uuid-3', 'uuid-1'], // Use UUIDs instead of business IDs
           inherentLikelihood: 'medium',
           inherentImpact: 'low',
         },

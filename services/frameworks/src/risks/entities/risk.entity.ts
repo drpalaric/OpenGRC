@@ -1,5 +1,6 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
+import { RiskControl } from './risk-control.entity';
 
 /**
  * Risk entity for managing organizational risks
@@ -75,10 +76,20 @@ export class Risk extends BaseEntity {
   threats?: string;
 
   /**
-   * Array of linked control IDs
-   * Controls that mitigate this risk
+   * Controls linked to this risk (many-to-many via junction table)
+   * This relationship provides proper normalization and allows metadata
    */
-  @Column({ type: 'simple-array', nullable: true })
+  @OneToMany(() => RiskControl, riskControl => riskControl.risk, {
+    cascade: true,
+    eager: false // Load on demand to avoid performance issues
+  })
+  riskControls: RiskControl[];
+
+  /**
+   * DEPRECATED: Old array-based storage (kept temporarily for migration)
+   * Will be removed after data migration to junction table
+   */
+  @Column({ type: 'text', array: true, nullable: true })
   linkedControls?: string[];
 
   /**

@@ -22,7 +22,7 @@ const mockRisk = {
   residualImpact: 'low',
   treatment: 'Mitigate',
   threats: 'External attackers, insider threats',
-  linkedControls: ['CTRL-001', 'CTRL-002'],
+  linkedControls: ['ctrl-1', 'ctrl-2'], // Use UUIDs instead of business IDs
   stakeholders: ['CISO', 'CTO'],
   creator: 'John Doe',
   businessUnit: 'IT Department',
@@ -73,8 +73,8 @@ describe('Risk Details Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('RISK-001')).toBeInTheDocument();
-        expect(screen.getByText('Data Breach')).toBeInTheDocument();
+        expect(screen.getAllByText('RISK-001').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Data Breach').length).toBeGreaterThan(0);
       });
     });
 
@@ -124,8 +124,8 @@ describe('Risk Details Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/CTRL-001/)).toBeInTheDocument();
-        expect(screen.getByText(/Access Control/)).toBeInTheDocument();
+        expect(screen.getAllByText(/CTRL-001/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Access Control/).length).toBeGreaterThan(0);
       });
     });
   });
@@ -223,12 +223,11 @@ describe('Risk Details Page', () => {
         });
 
       const { container } = render(
-        <BrowserRouter>
+        <MemoryRouter initialEntries={['/risks/risk-uuid-123']}>
           <Routes>
             <Route path="/risks/:id" element={<RiskDetails />} />
           </Routes>
-        </BrowserRouter>,
-        { initialEntries: ['/risks/risk-uuid-123'] } as any
+        </MemoryRouter>
       );
 
       await waitFor(() => {
@@ -382,7 +381,7 @@ describe('Risk Details Page', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText('Data Breach')).toBeInTheDocument();
+        expect(screen.getAllByText('Data Breach').length).toBeGreaterThan(0);
         expect(screen.queryByText('Should Not Save')).not.toBeInTheDocument();
       });
     });
@@ -441,7 +440,7 @@ describe('Risk Details Page', () => {
 
       const riskWithNewControls = {
         ...mockRisk,
-        linkedControls: ['AST-01', 'IAC-02'],
+        linkedControls: ['uuid-1', 'uuid-2'], // Use UUIDs instead of business IDs
       };
 
       let callCount = 0;

@@ -54,6 +54,7 @@ export default function ControlDetail() {
       const risks = risksResult.data || [];
 
       // Filter risks that have this control linked
+      // linkedControls now stores UUIDs, so use the UUID from URL parameter
       const linked = risks.filter((risk: Risk & { linkedControls?: string[] }) =>
         risk.linkedControls && risk.linkedControls.includes(controlId)
       );
@@ -258,6 +259,40 @@ export default function ControlDetail() {
               </div>
             </div>
           </div>
+
+          {/* Linked Risks */}
+          <div className="bg-black border border-gray-800 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Linked Risks ({linkedRisks.length})</h3>
+            {linkedRisks.length === 0 ? (
+              <p className="text-gray-400 text-sm">No risks linked to this control</p>
+            ) : (
+              <div className="space-y-3">
+                {linkedRisks.map(risk => (
+                  <div
+                    key={risk.id}
+                    onClick={() => navigate(`/risks/${risk.id}`)}
+                    className="p-3 bg-gray-900 border border-gray-800 rounded-lg hover:border-amber-500 cursor-pointer transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium text-amber-500">{risk.riskId}</p>
+                        <p className="text-sm text-white mt-1">{risk.title}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex gap-2 text-xs">
+                      <span className="text-gray-400">
+                        Likelihood: <span className="text-gray-300">{risk.inherentLikelihood}</span>
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-400">
+                        Impact: <span className="text-gray-300">{risk.inherentImpact}</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar - Right 1/3 */}
@@ -314,40 +349,6 @@ export default function ControlDetail() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Linked Risks */}
-          <div className="bg-black border border-gray-800 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Linked Risks ({linkedRisks.length})</h3>
-            {linkedRisks.length === 0 ? (
-              <p className="text-gray-400 text-sm">No risks linked to this control</p>
-            ) : (
-              <div className="space-y-3">
-                {linkedRisks.map(risk => (
-                  <div
-                    key={risk.id}
-                    onClick={() => navigate(`/risks/${risk.id}`)}
-                    className="p-3 bg-gray-900 border border-gray-800 rounded-lg hover:border-amber-500 cursor-pointer transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-medium text-amber-500">{risk.riskId}</p>
-                        <p className="text-sm text-white mt-1">{risk.title}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex gap-2 text-xs">
-                      <span className="text-gray-400">
-                        Likelihood: <span className="text-gray-300">{risk.inherentLikelihood}</span>
-                      </span>
-                      <span className="text-gray-400">•</span>
-                      <span className="text-gray-400">
-                        Impact: <span className="text-gray-300">{risk.inherentImpact}</span>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>

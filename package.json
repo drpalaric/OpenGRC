@@ -31,9 +31,12 @@
     "terraform:plan": "cd infrastructure/terraform && terraform plan",
     "terraform:apply": "cd infrastructure/terraform && terraform apply",
     "backup:create": "node scripts/backup.js",
-    "backup:restore": "node scripts/restore.js"
+    "backup:restore": "node scripts/restore.js",
+    "test:e2e": "npx playwright test",
+    "report:e2e": "npx playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@types/node": "^20.10.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.3.3"

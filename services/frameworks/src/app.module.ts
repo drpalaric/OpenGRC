@@ -10,6 +10,7 @@ import { HealthModule } from './health/health.module';
 import { Framework } from './frameworks/entities/framework.entity';
 import { FrameworkControl } from './frameworks/entities/framework-control.entity';
 import { Risk } from './risks/entities/risk.entity';
+import { RiskControl } from './risks/entities/risk-control.entity';
 import { Control } from './controls/entities/control.entity';
 
 @Module({
@@ -23,7 +24,7 @@ import { Control } from './controls/entities/control.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get('DATABASE_URL'),
-        entities: [Framework, FrameworkControl, Risk, Control],
+        entities: [Framework, FrameworkControl, Risk, RiskControl, Control],
         synchronize: true, // Auto-sync schema in dev
         logging: false,
       }),

@@ -173,27 +173,21 @@ export default function Risks() {
       return <span className="text-gray-500">None</span>;
     }
 
-    // Sort controls alphabetically by controlId
-    const sortedControls = [...linkedControls].sort((a, b) => a.localeCompare(b));
+    // linkedControls now contains UUIDs, so find the control objects and sort by business controlId
+    const controlObjects = linkedControls
+      .map(uuid => controls.find(c => c.id === uuid))
+      .filter(Boolean) as Control[];
+
+    const sortedControls = controlObjects.sort((a, b) => a.controlId.localeCompare(b.controlId));
     const displayControls = sortedControls.slice(0, 3);
-    const hasMore = sortedControls.length > 3;
+    const hasMore = linkedControls.length > 3;
 
     return (
       <div className="flex flex-wrap gap-1">
-        {displayControls.map(controlId => {
-          // Find the control details from the controls array
-          const control = controls.find(c => c.controlId === controlId);
-          if (control) {
-            return (
-              <span key={controlId} className="text-xs text-gray-400">
-                {control.controlId}, {control.domain}, {control.name}
-              </span>
-            );
-          }
-          // Fallback to just showing the ID if control not found
+        {displayControls.map(control => {
           return (
-            <span key={controlId} className="text-xs text-gray-400">
-              {controlId}
+            <span key={control.id} className="text-xs text-gray-400">
+              {control.controlId}, {control.domain}, {control.name}
             </span>
           );
         })}
@@ -615,8 +609,8 @@ export default function Risks() {
                           <label className="flex items-start cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={newRisk.linkedControls?.includes(control.controlId) || false}
-                              onChange={() => toggleControlLink(control.controlId)}
+                              checked={newRisk.linkedControls?.includes(control.id) || false}
+                              onChange={() => toggleControlLink(control.id)}
                               className="mt-1 h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-700 rounded bg-gray-800"
                             />
                             <div className="ml-3">

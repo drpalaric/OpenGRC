@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { RiskControl } from '../../risks/entities/risk-control.entity';
 
 /**
  * Control Entity
@@ -56,4 +57,14 @@ export class Control {
 
   @Column({ type: 'text', nullable: true })
   policy: string;
+
+  /**
+   * Risks that this control mitigates (many-to-many via junction table)
+   * Optional relationship for querying risks from the control side
+   */
+  @OneToMany(() => RiskControl, riskControl => riskControl.control, {
+    cascade: false,
+    eager: false
+  })
+  riskControls?: RiskControl[];
 }

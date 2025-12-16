@@ -7,6 +7,7 @@ import { FrameworksController } from '../src/frameworks/frameworks.controller';
 import { FrameworksService } from '../src/frameworks/frameworks.service';
 import { Framework, FrameworkStatus, FrameworkType } from '../src/frameworks/entities/framework.entity';
 import { FrameworkControl, ControlImplementationStatus, ControlPriority } from '../src/frameworks/entities/framework-control.entity';
+import { Control } from '../src/controls/entities/control.entity';
 import { LoggingInterceptor, TransformInterceptor } from '../src/common/interceptors';
 
 type QueryPredicate<T> = (item: T) => boolean;
@@ -308,14 +309,66 @@ class InMemoryFrameworkControlRepository {
   }
 }
 
+class InMemoryControlRepository {
+  private controls: Control[] = [];
+
+  create(data: Partial<Control>): Control {
+    return {
+      id: data.id ?? randomUUID(),
+      controlId: data.controlId ?? '',
+      source: data.source ?? 'Custom',
+      name: data.name ?? '',
+      description: data.description ?? '',
+      domain: data.domain ?? '',
+      procedure: data.procedure ?? '',
+      maturity: data.maturity ?? '',
+      nist80053: data.nist80053 ?? '',
+      nistCsf: data.nistCsf ?? '',
+      iso27k: data.iso27k ?? '',
+      pci4: data.pci4 ?? '',
+      mitre: data.mitre ?? '',
+      evidence: data.evidence ?? '',
+      policy: data.policy ?? '',
+    } as Control;
+  }
+
+  async save(control: Control): Promise<Control> {
+    const idx = this.controls.findIndex((c) => c.id === control.id);
+    if (idx === -1) {
+      this.controls.push(control);
+    } else {
+      this.controls[idx] = control;
+    }
+    return control;
+  }
+
+  async find(options?: any): Promise<Control[]> {
+    return [...this.controls];
+  }
+
+  async findOne(options: { where: Partial<Control> }): Promise<Control | null> {
+    const control = this.controls.find((c) =>
+      (options.where.id && c.id === options.where.id) ||
+      (options.where.controlId && c.controlId === options.where.controlId)
+    );
+    return control ? { ...control } : null;
+  }
+
+  clear() {
+    this.controls = [];
+  }
+}
+
 describe('Frameworks API (e2e) - In-Memory', () => {
   let app: INestApplication;
   let frameworkRepo: InMemoryFrameworkRepository;
   let controlRepo: InMemoryFrameworkControlRepository;
+  let masterControlRepo: InMemoryControlRepository;
 
   beforeAll(async () => {
     frameworkRepo = new InMemoryFrameworkRepository();
     controlRepo = new InMemoryFrameworkControlRepository();
+    masterControlRepo = new InMemoryControlRepository();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [FrameworksController],
@@ -323,6 +376,7 @@ describe('Frameworks API (e2e) - In-Memory', () => {
         FrameworksService,
         { provide: getRepositoryToken(Framework), useValue: frameworkRepo },
         { provide: getRepositoryToken(FrameworkControl), useValue: controlRepo },
+        { provide: getRepositoryToken(Control), useValue: masterControlRepo },
       ],
     }).compile();
 

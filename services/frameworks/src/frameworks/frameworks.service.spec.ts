@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { FrameworksService } from './frameworks.service';
 import { Framework, FrameworkStatus, FrameworkType } from './entities/framework.entity';
 import { FrameworkControl, ControlImplementationStatus } from './entities/framework-control.entity';
+import { Control } from '../controls/entities/control.entity';
 
 describe('FrameworksService - Intended Functionality Only', () => {
   let service: FrameworksService;
@@ -50,6 +51,13 @@ describe('FrameworksService - Intended Functionality Only', () => {
     createQueryBuilder: jest.fn(() => mockControlQueryBuilder),
   };
 
+  const mockMasterControlRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,6 +69,10 @@ describe('FrameworksService - Intended Functionality Only', () => {
         {
           provide: getRepositoryToken(FrameworkControl),
           useValue: mockControlRepository,
+        },
+        {
+          provide: getRepositoryToken(Control),
+          useValue: mockMasterControlRepository,
         },
       ],
     }).compile();
@@ -169,15 +181,29 @@ describe('FrameworksService - Intended Functionality Only', () => {
         requiresEvidence: true,
       };
 
+      const masterControl = {
+        id: 'master-123',
+        controlId: 'REQ-001',
+        source: 'Custom',
+        name: 'Access Control',
+        description: 'Control access to systems',
+        domain: 'security',
+      };
+
       const savedControl = {
         id: 'ctrl-123',
         ...createDto,
+        controlCode: 'REQ-001',
+        externalControlId: 'master-123',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const framework = { id: 'fw-123', totalControls: 0 };
 
+      mockMasterControlRepository.findOne.mockResolvedValue(null);
+      mockMasterControlRepository.create.mockReturnValue(masterControl);
+      mockMasterControlRepository.save.mockResolvedValue(masterControl);
       mockControlRepository.create.mockReturnValue(savedControl);
       mockControlRepository.save.mockResolvedValue(savedControl);
       mockControlRepository.find.mockResolvedValue([savedControl]);
@@ -186,31 +212,32 @@ describe('FrameworksService - Intended Functionality Only', () => {
 
       const result = await service.addControl(createDto);
 
+      expect(mockMasterControlRepository.save).toHaveBeenCalled();
       expect(mockControlRepository.save).toHaveBeenCalled();
       expect(result).toEqual(savedControl);
     });
 
     it('should retrieve all controls regardless of framework association', async () => {
       const allControls = [
-        { id: '1', requirementId: 'REQ-001', title: 'Control 1', frameworkId: 'fw-123' },
-        { id: '2', requirementId: 'REQ-002', title: 'Control 2', frameworkId: null },
+        { id: '1', controlId: 'REQ-001', name: 'Control 1', source: 'Custom' },
+        { id: '2', controlId: 'REQ-002', name: 'Control 2', source: 'SCF' },
       ];
 
-      mockControlRepository.find.mockResolvedValue(allControls);
+      mockMasterControlRepository.find.mockResolvedValue(allControls);
 
       const result = await service.findAllControls();
 
-      expect(mockControlRepository.find).toHaveBeenCalled();
+      expect(mockMasterControlRepository.find).toHaveBeenCalled();
       expect(result).toEqual(allControls);
     });
 
     it('should return a non-empty array when controls exist', async () => {
       const allControls = [
-        { id: '1', requirementId: 'REQ-001', title: 'Control 1', frameworkId: 'fw-123' },
-        { id: '2', requirementId: 'REQ-002', title: 'Control 2', frameworkId: null },
+        { id: '1', controlId: 'REQ-001', name: 'Control 1', source: 'Custom' },
+        { id: '2', controlId: 'REQ-002', name: 'Control 2', source: 'SCF' },
       ];
 
-      mockControlRepository.find.mockResolvedValue(allControls);
+      mockMasterControlRepository.find.mockResolvedValue(allControls);
 
       const result = await service.findAllControls();
 
@@ -373,18 +400,32 @@ describe('FrameworksService - Intended Functionality Only', () => {
         // domain is optional - can be omitted
       };
 
+      const masterControl = {
+        id: 'master-456',
+        controlId: 'REQ-001',
+        source: 'Custom',
+        name: 'Access Control',
+        description: 'Control access to systems',
+        domain: 'general',
+      };
+
       const savedControl = {
         id: 'ctrl-456',
         ...createDtoWithoutDomain,
+        controlCode: 'REQ-001',
+        externalControlId: 'master-456',
+        domain: 'general',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const framework = { id: 'fw-123', totalControls: 0 };
 
+      mockMasterControlRepository.findOne.mockResolvedValue(null);
+      mockMasterControlRepository.create.mockReturnValue(masterControl);
+      mockMasterControlRepository.save.mockResolvedValue(masterControl);
       mockControlRepository.create.mockReturnValue(savedControl);
       mockControlRepository.save.mockResolvedValue(savedControl);
-      mockControlRepository.find.mockResolvedValue([savedControl]);
       mockFrameworkRepository.findOne.mockResolvedValue(framework);
       mockFrameworkRepository.save.mockResolvedValue(framework);
 
@@ -405,18 +446,31 @@ describe('FrameworksService - Intended Functionality Only', () => {
         domain: 'security', // Required domain field
       };
 
+      const masterControl = {
+        id: 'master-123',
+        controlId: 'REQ-001',
+        source: 'Custom',
+        name: 'Access Control',
+        description: 'Control access to systems',
+        domain: 'security',
+      };
+
       const savedControl = {
         id: 'ctrl-123',
         ...createDto,
+        controlCode: 'REQ-001',
+        externalControlId: 'master-123',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       const framework = { id: 'fw-123', totalControls: 0 };
 
+      mockMasterControlRepository.findOne.mockResolvedValue(null);
+      mockMasterControlRepository.create.mockReturnValue(masterControl);
+      mockMasterControlRepository.save.mockResolvedValue(masterControl);
       mockControlRepository.create.mockReturnValue(savedControl);
       mockControlRepository.save.mockResolvedValue(savedControl);
-      mockControlRepository.find.mockResolvedValue([savedControl]);
       mockFrameworkRepository.findOne.mockResolvedValue(framework);
       mockFrameworkRepository.save.mockResolvedValue(framework);
 

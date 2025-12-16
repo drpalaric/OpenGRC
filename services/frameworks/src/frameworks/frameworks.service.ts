@@ -13,6 +13,7 @@ import { CreateFrameworkControlDto } from './dto/create-framework-control.dto';
 import { UpdateFrameworkControlDto } from './dto/update-framework-control.dto';
 import { FilterFrameworkDto } from './dto/filter-framework.dto';
 import { PaginatedResponse } from '../common';
+import { Control } from '../controls/entities/control.entity';
 
 @Injectable()
 export class FrameworksService {
@@ -21,6 +22,8 @@ export class FrameworksService {
     private frameworkRepository: Repository<Framework>,
     @InjectRepository(FrameworkControl)
     private frameworkControlRepository: Repository<FrameworkControl>,
+    @InjectRepository(Control)
+    private controlRepository: Repository<Control>,
   ) {}
 
   async create(createFrameworkDto: CreateFrameworkDto): Promise<Framework> {
@@ -168,9 +171,9 @@ export class FrameworksService {
 
   // Framework Control operations
   // Controls can be created with or without a framework association
-async addControl(
-  createControlDto: CreateFrameworkControlDto,
-): Promise<FrameworkControl> {
+  async addControl(
+    createControlDto: CreateFrameworkControlDto,
+  ): Promise<FrameworkControl> {
 
   // Normalize empty string to null
   if (createControlDto.frameworkId === '') {
@@ -182,13 +185,44 @@ async addControl(
     await this.findOne(createControlDto.frameworkId);
   }
 
-  // Create control ONCE, explicitly setting frameworkId
-  const control = this.frameworkControlRepository.create({
-    ...createControlDto,
-    frameworkId: createControlDto.frameworkId ?? null,
-  });
+    const controlCode =
+      createControlDto.controlCode || createControlDto.requirementId;
 
-  const savedControl = await this.frameworkControlRepository.save(control);
+    if (!controlCode) {
+      throw new BadRequestException(
+        'controlCode or requirementId is required to create a control',
+      );
+    }
+
+    const domain = createControlDto.domain || 'general';
+
+    // Ensure the control exists in the master library
+    let masterControl = await this.controlRepository.findOne({
+      where: { controlId: controlCode },
+    });
+
+    if (!masterControl) {
+      masterControl = this.controlRepository.create({
+        controlId: controlCode,
+        source: 'Custom',
+        name: createControlDto.title || controlCode,
+        description: createControlDto.description,
+        domain,
+        procedure: createControlDto.testingProcedure,
+      });
+      masterControl = await this.controlRepository.save(masterControl);
+    }
+
+    // Create framework control, linking to master via externalControlId
+    const control = this.frameworkControlRepository.create({
+      ...createControlDto,
+      frameworkId: createControlDto.frameworkId ?? null,
+      controlCode: masterControl.controlId,
+      externalControlId: masterControl.id,
+      domain,
+    });
+
+    const savedControl = await this.frameworkControlRepository.save(control);
 
   // Update progress ONLY if assigned
   if (savedControl.frameworkId) {
@@ -214,8 +248,8 @@ async addControl(
     });
   }
 
-  async findAllControls(): Promise<FrameworkControl[]> {
-    return this.frameworkControlRepository.find();
+  async findAllControls(): Promise<Control[]> {
+    return this.controlRepository.find({ order: { controlId: 'ASC' } });
   }
 
   async findControl(id: string): Promise<FrameworkControl> {
